@@ -1,0 +1,166 @@
+---
+alwaysApply: true
+---
+ # 项目技术栈和规范指南
+
+## 项目类型识别
+- 这是一个基于H5的开发项目
+- 使用 JavaScript 和 TypeScript 混合开发
+- 使用element-ui风格的ui
+- 支持多环境配置本地和prod域名和配置不一样
+
+## 目录结构规范
+- `pages/`: 页面文件目录
+- `components/`: 公共组件目录
+- `utils/`: 工具函数目录
+- `services/`: 服务层目录
+- `assets/`: 静态资源目录
+- `store/`: 简单的状态管理目录
+- `typings/`: TypeScript 类型定义目录
+
+## 代码规范
+- 遵循 Airbnb JavaScript 规范
+- 使用 ESLint 进行代码检查
+- 使用 StyleLint 进行样式检查
+- 使用 Prettier 进行代码格式化
+- 使用 EditorConfig 统一编辑器配置
+- 支持 JavaScript 和 TypeScript 混合开发，但需要保证代码质量
+- 不随意变更与当前提问无关的一些代码、中文符号或者linter规范
+
+## 组件和页面入参分析规范
+### 0. 全部部分页面服用
+   底部备案
+
+### 1. 组件入参分析
+- 每个组件必须明确定义其 props 类型
+- 使用 TypeScript 接口或类型定义入参结构
+- 必须包含以下分析内容：
+  - 必填参数和可选参数
+  - 参数默认值
+  - 参数类型定义
+  - 参数验证规则
+  - 参数使用说明
+  - 参数变更监听处理
+
+### 2. 页面入参分析
+- 页面必须明确定义其入参类型
+- 必须包含以下分析内容：
+  - 路由参数（query 参数）
+  - 页面状态参数
+  - 全局状态依赖
+  - 页面初始化参数
+  - 页面生命周期依赖
+
+### 3. 请求依赖分析
+- 每个组件/页面必须明确其数据依赖
+- 必须包含以下分析内容：
+  - 接口依赖列表
+  - 接口调用时机
+  - 接口参数来源
+  - 接口返回数据处理
+  - 接口错误处理
+  - 接口缓存策略
+
+### 4. 入参分析文档规范
+- 每个组件/页面必须包含入参分析文档
+- 文档必须包含以下内容：
+  ```typescript
+  /**
+   * @component 组件名称
+   * @description 组件描述
+   * 
+   * @props
+   * @param {string} prop1 - 参数1描述
+   * @param {number} prop2 - 参数2描述
+   * 
+   * @dependencies
+   * @api /api/example - API描述
+   * @store globalData - 全局状态依赖
+   * 
+   * @example
+   * <Component prop1="value1" prop2={2} />
+   */
+  ```
+
+## 特殊优化
+1. Page/Component 优化
+   - 对 Page 和 Component 进行了特殊优化
+   - 优化了 this.setData 的性能
+   - 支持数据批量更新
+
+3. 别名规则
+   - 使用 alias 进行路径映射
+   - 支持相对路径和绝对路径
+   - 统一管理模块引用
+
+## 网络请求
+
+## 状态管理
+- 使用简单的全局状态管理（app.globalData）
+- 在 `store/index.js` 中定义了部分全局状态
+- 使用 wx.setStorageSync 进行本地存储
+- 支持简单的状态持久化
+
+## 页面开发
+- 使用微信小程序原生的 Page 和 Component 进行开发
+- 支持 JavaScript 和 TypeScript 混合开发
+- 页面逻辑主要在 JS/TS 文件中实现
+- 使用 WXML 进行页面结构编写
+- 使用 WXSS 进行样式编写
+
+## 构建和部署
+- 使用 Gulp 进行构建，支持按需拷贝
+- 使用 mpup 进行小程序上传
+- 支持多环境部署（cli、neutral、third、cli-exp、scan）
+- 支持分包优化和预加载
+
+## Git 工作流
+- 使用 Git Submodule 管理子模块
+- 使用 lint-staged 进行提交前代码检查
+
+## 开发规范
+1. 组件开发
+   - 组件可以使用 JavaScript 或 TypeScript
+   - 组件样式使用 WXSS
+   - 组件必须包含必要的注释
+   - 注意组件性能优化
+
+2. 页面开发
+   - 页面逻辑可以使用 JavaScript 或 TypeScript
+
+3. 状态管理
+   - 使用 app.globalData 进行全局状态管理
+   - 遵循单向数据流原则
+   - 注意状态更新性能
+
+4. 网络请求
+   - 统一在 services 目录管理 API 请求
+   - 注意处理请求错误和重试
+   - 合理使用请求缓存
+   - 封装get post postjson post-filedata等请求
+
+## 注释规范
+- 使用 JSDoc 风格的注释
+- 必须包含函数参数和返回值的类型说明
+- 复杂逻辑必须添加必要的注释说明
+
+## 性能优化
+- 合理使用分包加载
+- 注意图片资源优化
+- 避免不必要的重渲染
+- 优化 setData 调用
+- 合理使用缓存
+
+## 安全规范
+- 敏感信息必须使用环境变量
+- 避免在代码中硬编码敏感信息
+- 注意 XSS 防护
+
+## 代码质量
+- 代码必须经过充分测试和验证
+- 确保代码的可维护性和可读性
+- 遵循最佳实践和设计模式
+- 注意性能优化和内存管理
+
+## 网络请求
+- 封装为了request.ts,并添加了额拦截器，code===0为正常，返回值自动取resoponse.data
