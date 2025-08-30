@@ -1,12 +1,13 @@
 <template>
   <div class="excel-to-word-page">
     <!-- 体验账号警告 -->
-    <div v-if="isExperienceAccount" class="experience-warning">
+    <div v-if="isExperienceAccount && !hideExperienceWarning" class="experience-warning">
       <el-alert
         title="体验账号使用提醒"
         type="warning"
-        :closable="false"
+        :closable="true"
         show-icon
+        @close="hideExperienceWarning = true"
       >
         <template #default>
           <p>您正在使用体验账号，数据仅用于测试，请勿上传重要数据。数据会定期清理，建议使用自己的账号登录。</p>
@@ -18,14 +19,6 @@
       <div class="page-container">
         <!-- 页面头部 -->
         <div class="page-header">
-          <el-button 
-            type="primary" 
-            :icon="ArrowLeft" 
-            @click="goBack"
-            class="back-btn"
-          >
-            返回首页
-          </el-button>
           <h1>Excel批量转Word</h1>
           <p>将Excel文件批量转换为Word文档，支持自定义模板和格式</p>
         </div>
@@ -320,6 +313,7 @@ const globalStore = useGlobalStore()
 // 响应式数据
 const showAuthModal = ref(false)
 const showLoginChoiceDialog = ref(false)
+const hideExperienceWarning = ref(false)
 
 // 计算属性 - 登录状态
 const isLoggedIn = computed(() => globalStore.isLoggedIn)
@@ -601,8 +595,8 @@ const handleShowNormalLogin = () => {
 
 .experience-warning {
   position: sticky;
-  top: 0;
-  z-index: 1000;
+  top: 60px;
+  z-index: 999;
   margin-bottom: 20px;
 }
 

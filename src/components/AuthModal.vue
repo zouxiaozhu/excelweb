@@ -404,6 +404,7 @@ const handleRegister = async () => {
   border-radius: 16px;
   overflow: hidden;
   margin-top: 50px !important;
+  z-index: 2000 !important;
 }
 
 .auth-modal :deep(.el-dialog__header) {

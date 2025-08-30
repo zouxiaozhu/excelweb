@@ -1,12 +1,13 @@
 <template>
   <div class="excel-query-page">
     <!-- 体验账号警告 -->
-    <div v-if="isExperienceAccount" class="experience-warning">
+    <div v-if="isExperienceAccount && !hideExperienceWarning" class="experience-warning">
       <el-alert
         title="体验账号使用提醒"
         type="warning"
-        :closable="false"
+        :closable="true"
         show-icon
+        @close="hideExperienceWarning = true"
       >
         <template #default>
           <p>您正在使用体验账号，数据仅用于测试，请勿上传重要数据。数据会定期清理，建议使用自己的账号登录。</p>
@@ -18,14 +19,6 @@
       <div class="page-container">
         <!-- 页面头部 -->
         <div class="page-header">
-          <el-button 
-            type="primary" 
-            :icon="ArrowLeft" 
-            @click="goBack"
-            class="back-btn"
-          >
-            返回首页
-          </el-button>
           <h1>表格快查</h1>
           <p>上传Excel文件，快速解析和查看表格数据</p>
         </div>
@@ -265,6 +258,7 @@ const globalStore = useGlobalStore()
 // 响应式数据
 const showAuthModal = ref(false)
 const showLoginChoiceDialog = ref(false)
+const hideExperienceWarning = ref(false)
 
 // 计算属性 - 登录状态
 const isLoggedIn = computed(() => globalStore.isLoggedIn)
@@ -527,8 +521,8 @@ const handleShowNormalLogin = () => {
 
 .experience-warning {
   position: sticky;
-  top: 0;
-  z-index: 1000;
+  top: 60px;
+  z-index: 999;
   margin-bottom: 20px;
 }
 
