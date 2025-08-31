@@ -60,6 +60,7 @@
                     :accept="'.xlsx,.xls'"
                     :multiple="true"
                     :max-size="20"
+                    business-type="excel_to_word"
                     @success="handleUploadSuccess"
                     @error="handleUploadError"
                   />

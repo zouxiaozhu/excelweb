@@ -9,10 +9,12 @@
       :on-success="handleSuccess"
       :on-error="handleError"
       :on-progress="handleProgress"
+      :on-change="handleUploadChange"
       :accept="accept"
       :multiple="multiple"
       :disabled="disabled"
       :show-file-list="false"
+      :auto-upload="false"
     >
       <el-icon class="el-icon--upload"><upload-filled /></el-icon>
       <div class="el-upload__text">
@@ -30,6 +32,17 @@
       <el-progress :percentage="uploadPercent" :status="uploadStatus" />
       <p class="progress-text">{{ progressText }}</p>
     </div>
+    
+    <!-- 重新上传按钮 -->
+    <div v-if="showReupload" class="reupload-section">
+      <el-button 
+        type="primary" 
+        @click="handleReupload"
+        :icon="Refresh"
+      >
+        重新上传
+      </el-button>
+    </div>
   </div>
 </template>
 
@@ -43,6 +56,7 @@
  * @param {boolean} multiple - 是否支持多选
  * @param {number} maxSize - 最大文件大小(MB)
  * @param {boolean} disabled - 是否禁用
+ * @param {string} businessType - 业务类型，用于区分不同场景的文件上传
  * 
  * @emits
  * @event success - 上传成功事件
@@ -51,7 +65,7 @@
  */
 
 import { ref, computed } from 'vue'
-import { UploadFilled } from '@element-plus/icons-vue'
+import { UploadFilled, Refresh } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import type { UploadProps, UploadRequestOptions } from 'element-plus'
 import { fileApi } from '@/services/api'
@@ -62,13 +76,15 @@ interface Props {
   multiple?: boolean
   maxSize?: number // MB
   disabled?: boolean
+  businessType?: string // 业务类型
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  accept: '.xlsx,.xls',
+  accept: '.xlsx',
   multiple: false,
   maxSize: 10,
-  disabled: false
+  disabled: false,
+  businessType: 'default'
 })
 
 // 定义组件事件
@@ -85,6 +101,7 @@ const uploadRef = ref()
 const uploading = ref(false)
 const uploadPercent = ref(0)
 const uploadStatus = ref<'success' | 'exception' | undefined>()
+const showReupload = ref(false)
 
 // 计算属性
 const uploadAction = computed(() => '#') // 使用自定义上传
@@ -123,19 +140,15 @@ const beforeUpload: UploadProps['beforeUpload'] = (file) => {
     return false
   }
 
-  uploading.value = true
-  uploadPercent.value = 0
-  uploadStatus.value = undefined
-
-  return false // 阻止自动上传，使用自定义上传
+  return true // 允许文件选择
 }
 
 /**
  * 自定义上传
  */
-const customUpload = async (file: File) => {
+const customUpload = async (file: File, businessType: string) => {
   try {
-    const response = await fileApi.upload(file)
+    const response = await fileApi.upload(file, businessType)
     handleSuccess(response, file)
   } catch (error) {
     handleError(error as Error, file)
@@ -152,6 +165,9 @@ const handleSuccess = (response: any, file: File) => {
   
   ElMessage.success('文件上传成功！')
   emit('success', { response, file })
+  
+  // 显示重新上传按钮
+  showReupload.value = true
   
   // 2秒后隐藏进度条
   setTimeout(() => {
@@ -179,23 +195,38 @@ const handleProgress = (event: any) => {
   emit('progress', uploadPercent.value)
 }
 
-// 监听文件选择，触发自定义上传
-const handleFileChange = (file: File) => {
-  if (beforeUpload(file) !== false) {
-    customUpload(file)
-  }
-}
-
 // 处理 Element Plus Upload 组件的文件变化
 const handleUploadChange = (uploadFile: any) => {
   if (uploadFile.raw) {
-    handleFileChange(uploadFile.raw)
+    // 开始上传
+    uploading.value = true
+    uploadPercent.value = 0
+    uploadStatus.value = undefined
+    showReupload.value = false // 隐藏重新上传按钮
+    
+    // 调用自定义上传，传递业务类型
+    customUpload(uploadFile.raw, props.businessType)
   }
+}
+
+/**
+ * 重新上传处理
+ */
+const handleReupload = () => {
+  // 清空文件列表
+  uploadRef.value?.clearFiles()
+  // 隐藏重新上传按钮
+  showReupload.value = false
+  // 重置上传状态
+  uploading.value = false
+  uploadPercent.value = 0
+  uploadStatus.value = undefined
 }
 
 // 暴露方法给父组件
 defineExpose({
-  clearFiles: () => uploadRef.value?.clearFiles()
+  clearFiles: () => uploadRef.value?.clearFiles(),
+  reupload: handleReupload
 })
 </script>
 
@@ -222,12 +253,32 @@ defineExpose({
   font-size: 14px;
 }
 
+.reupload-section {
+  margin-top: 20px;
+  text-align: center;
+}
+
 :deep(.el-upload) {
   width: 100%;
 }
 
 :deep(.el-upload-dragger) {
   width: 100%;
-  height: 200px;
+  height: 80px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 10px;
+}
+
+:deep(.el-upload-dragger .el-icon--upload) {
+  font-size: 24px;
+  margin-bottom: 8px;
+}
+
+:deep(.el-upload-dragger .el-upload__text) {
+  font-size: 14px;
+  line-height: 1.4;
 }
 </style>

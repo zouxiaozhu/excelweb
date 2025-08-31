@@ -12,8 +12,13 @@ interface UserInfo {
     email: string
     nickName?: string
     mobile?: string
-    isExperienceAccount: boolean
     avatar?: string
+}
+
+interface TokenInfo {
+    accessToken: string
+    tokenExpireTime: string
+    refreshTime: string
 }
 
 /**
@@ -192,32 +197,29 @@ export const useGlobalStore = defineStore('global', {
  */
         async initUserState() {
             const token = localStorage.getItem('token')
-
             if (token) {
-                try {
-                    // 验证token并获取用户信息
-                    const response = await authApiService.checkTokenAndGetUserInfo()
+                // 验证token并获取用户信息
+                const data = await authApiService.checkTokenAndGetUserInfo()
 
-                    if (response.code === 200 && response.data) {
-                        const userInfo: UserInfo = {
-                            id: response.data.userInfo.userId.toString(),
-                            username: response.data.userInfo.userName,
-                            email: response.data.userInfo.email,
-                            nickName: response.data.userInfo.nickName,
-                            mobile: response.data.userInfo.mobile,
-                            isExperienceAccount: false, // 真实用户
-                            avatar: response.data.userInfo.avatar
-                        }
-
-                        this.setLoginState(true, userInfo, response.data.tokenInfo.accessToken)
-                    } else {
-                        // token无效，清除本地存储
-                        this.logout()
-                    }
-                } catch (error) {
-                    console.error('验证token失败:', error)
-                    this.logout()
+                const userInfo: UserInfo = {
+                    id: data.userInfo.userId.toString(),
+                    username: data.userInfo.userName,
+                    email: data.userInfo.email,
+                    nickName: data.userInfo.nickName,
+                    mobile: data.userInfo.mobile,
+                    avatar: data.userInfo.avatar,
                 }
+
+                const tokneInfo: TokenInfo = {
+                    accessToken: data.tokenInfo.accessToken,
+                    tokenExpireTime: data.tokenInfo.tokenExpireTime,
+                    refreshTime: data.tokenInfo.refreshTime
+                }
+
+                const isExperienceAccount = data.isExp;
+                this.setLoginState(true, userInfo, tokneInfo.accessToken, isExperienceAccount)
+            } else {
+                this.logout()
             }
         },
 
@@ -260,8 +262,8 @@ export const useGlobalStore = defineStore('global', {
         },
 
         /**
- * 清空当前文件和任务
- */
+        * 清空当前文件和任务
+        */
         clearCurrent() {
             this.currentFile = null
             this.currentTask = null

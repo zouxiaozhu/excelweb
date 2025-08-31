@@ -41,8 +41,9 @@
               </div>
             </template>
             <FileUpload 
-              :accept="'.xlsx,.xls'"
+              :accept="'.xlsx'"
               :max-size="10"
+              business-type="USER_EXCEL_PARSE"
               @success="handleUploadSuccess"
               @error="handleUploadError"
             />
@@ -82,6 +83,14 @@
                   @click="handleParse"
                 >
                   {{ parsing ? '解析中...' : '开始解析' }}
+                </el-button>
+                <el-button 
+                  type="default" 
+                  size="large"
+                  @click="handleReupload"
+                  style="margin-left: 10px;"
+                >
+                  重新上传
                 </el-button>
               </div>
             </div>
@@ -316,6 +325,21 @@ const handleUploadSuccess = ({ response }: { response: FileUploadResponse }) => 
  */
 const handleUploadError = (error: Error) => {
   ElMessage.error('文件上传失败：' + error.message)
+}
+
+/**
+ * 处理重新上传
+ */
+const handleReupload = () => {
+  // 清空当前文件信息
+  currentFileInfo.value = null
+  parseResult.value = null
+  globalStore.clearCurrent()
+  
+  // 回到第一步
+  currentStep.value = 0
+  
+  ElMessage.info('请重新选择文件上传')
 }
 
 /**

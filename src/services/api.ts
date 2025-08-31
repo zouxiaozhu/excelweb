@@ -22,10 +22,11 @@ export const fileApi = {
      * @param file 文件对象
      * @returns 上传结果
      */
-    upload(file: File): Promise<FileUploadResponse> {
+    upload(file: File, businessType: string): Promise<FileUploadResponse> {
         const formData = new FormData()
         formData.append('file', file)
-        return http.postFile('/doc.html#/third/file-controller/upload', formData)
+        formData.append('businessType', businessType)
+        return http.postFile('/file/upload', formData)
     },
 
     /**
@@ -34,7 +35,7 @@ export const fileApi = {
      * @returns 文件信息
      */
     getFileInfo(fileId: string): Promise<FileInfoResponse> {
-        return http.get(`/doc.html#/third/file-controller/getFileInfo?fileId=${fileId}`)
+        return http.get(`/file/info/?fileId=${fileId}`)
     }
 }
 
@@ -48,7 +49,7 @@ export const excelApi = {
      * @returns 解析结果
      */
     parse(fileId: string): Promise<ExcelParseResponse> {
-        return http.post('/doc.html#/third/excel-parse-controller/parse', {
+        return http.post('/excel/parse', {
             fileId
         })
     },
@@ -59,7 +60,7 @@ export const excelApi = {
      * @returns 任务列表
      */
     getExcelFileList(params: PageParams): Promise<PageResponse<ExcelParseTask>> {
-        return http.get('/doc.html#/third/excel-parse-controller/getExcelFileList', {
+        return http.get('/excel/excelFileList', {
             params
         })
     },
@@ -70,7 +71,7 @@ export const excelApi = {
      * @returns 任务详情
      */
     getTaskDetail(taskId: string): Promise<ExcelParseResponse> {
-        return http.get(`/doc.html#/third/excel-parse-controller/getTaskDetail?taskId=${taskId}`)
+        return http.get(`/excel/getParseFileDetailPage?taskId=${taskId}`)
     }
 }
 
