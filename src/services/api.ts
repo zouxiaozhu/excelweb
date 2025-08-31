@@ -85,6 +85,15 @@ export const excelApi = {
             taskId,
             ...settings
         })
+    },
+
+    /**
+     * 删除任务
+     * @param taskId 任务ID
+     * @returns 删除结果
+     */
+    deleteTask(taskId: string): Promise<ApiResponse> {
+        return http.delete(`/excel/deleteParseFile?taskId=${taskId}`)
     }
 }
 

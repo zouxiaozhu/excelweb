@@ -78,7 +78,8 @@ export interface ExcelParseTask {
     createTime: string
     completeTime?: string
     errorMessage?: string
-    fileInfo?: FileInfo
+    fileInfo?: FileInfo,
+    excelFile: string,
 }
 
 // 分页参数
@@ -89,7 +90,7 @@ export interface PageParams {
 
 // 分页响应
 export interface PageResponse<T> {
-    list: T[]
+    records: T[]
     total: number
     page: number
     pageSize: number

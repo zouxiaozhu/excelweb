@@ -203,13 +203,6 @@
                     设置
                   </el-button>
                   <el-button 
-                    type="info" 
-                    size="small"
-                    @click="copyTask(row)"
-                  >
-                    复制
-                  </el-button>
-                  <el-button 
                     type="danger" 
                     size="small"
                     @click="deleteTask(row)"
@@ -548,34 +541,40 @@ const editTask = (task: ExcelParseTask) => {
   showTaskSettingDialog.value = true
 }
 
-/**
- * 复制任务
- */
-const copyTask = (task: ExcelParseTask) => {
-  ElMessage.info('复制功能开发中...')
-  console.log('复制任务:', task)
-}
+
 
 /**
  * 删除任务
  */
-const deleteTask = (task: ExcelParseTask) => {
-  ElMessageBox.confirm(
-    `确定要删除任务 "${task.fileName}" 吗？`,
-    '确认删除',
-    {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning',
-    }
-  ).then(() => {
+const deleteTask = async (task: ExcelParseTask) => {
+  try {
+    await ElMessageBox.confirm(
+      `确定要删除任务 "${task.excelFile}" 吗？此操作不可恢复！`,
+      '确认删除',
+      {
+        confirmButtonText: '确定删除',
+        cancelButtonText: '取消',
+        type: 'warning',
+        dangerouslyUseHTMLString: false
+      }
+    )
+    
+    // 调用删除API
+    await excelApi.deleteTask(task.id)
+    
     ElMessage.success('删除成功')
     console.log('删除任务:', task)
-    // 这里可以调用删除API
-    // loadTasks() // 重新加载列表
-  }).catch(() => {
-    ElMessage.info('已取消删除')
-  })
+    
+    // 重新加载任务列表
+    await loadTasks()
+  } catch (error: any) {
+    if (error !== 'cancel') {
+      ElMessage.error('删除失败：' + (error.message || '未知错误'))
+      console.error('删除任务错误:', error)
+    } else {
+      ElMessage.info('已取消删除')
+    }
+  }
 }
 
 /**

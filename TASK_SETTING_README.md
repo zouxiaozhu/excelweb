@@ -55,6 +55,12 @@
 2. 系统会验证设置的有效性
 3. 保存成功后会自动刷新任务列表
 
+### 4. 删除任务
+1. 点击"删除"按钮
+2. 系统会弹出确认对话框
+3. 确认删除后，任务将被永久删除
+4. 删除成功后会自动刷新任务列表
+
 ## 技术实现
 
 ### 组件结构
@@ -68,6 +74,7 @@ TaskSettingDialog.vue
 
 ### API接口
 - `POST /excel/updateTaskSetting` - 更新任务设置
+- `DELETE /excel/deleteTask` - 删除任务
 
 ### 类型定义
 ```typescript
