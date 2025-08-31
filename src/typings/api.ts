@@ -17,6 +17,7 @@ export interface FileUploadResponse {
     fileName: string
     fileSize: number
     uploadTime: string
+    sizeText?: string
 }
 
 // 文件信息响应
@@ -67,6 +68,7 @@ export interface FileInfo {
     fileId: string
     fileName: string
     fileSize: number
+    sizeText?: string
     externalUrl?: string
 }
 

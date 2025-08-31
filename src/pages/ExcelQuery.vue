@@ -65,7 +65,7 @@
                     {{ currentFileInfo?.fileName }}
                   </el-descriptions-item>
                   <el-descriptions-item label="文件大小">
-                    {{ formatFileSize(currentFileInfo?.fileSize || 0) }}
+                    {{ (currentFileInfo?.sizeText || 0) }}
                   </el-descriptions-item>
                   <el-descriptions-item label="上传时间">
                     {{ currentFileInfo?.uploadTime }}

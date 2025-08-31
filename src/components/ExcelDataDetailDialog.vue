@@ -28,7 +28,7 @@
           {{ taskData?.createTime || '-' }}
         </el-descriptions-item>
         <el-descriptions-item label="文件大小">
-          {{ formatFileSize(taskData?.fileInfo?.fileSize || 0) }}
+          {{ taskData?.fileInfo?.sizeText || formatFileSize(taskData?.fileInfo?.fileSize || 0) }}
         </el-descriptions-item>
       </el-descriptions>
       
@@ -125,8 +125,7 @@ const pagination = reactive({
   total: 0
 })
 
-// 跟踪上一页的最大行号
-const lastMaxRowLine = ref(0)
+
 
 // 任务数据
 const taskData = computed(() => props.task)
@@ -153,8 +152,8 @@ watch(() => visible.value, (newVisible) => {
 const loadExcelData = async () => {
   if (!props.task?.id) return
   
-  // 计算offset：上一页的最大行号 + 1
-  const offset = pagination.current === 1 ? 0 : lastMaxRowLine.value + 1
+  // 计算offset：offset=((page-1)*size)+1
+  const offset = ((pagination.current - 1) * pagination.pageSize) + 1
   
   console.log('加载数据 - 页码:', pagination.current, '页大小:', pagination.pageSize, 'offset:', offset)
   
@@ -203,12 +202,7 @@ const loadExcelData = async () => {
         return rowData
       })
       
-      // 更新上一页的最大行号
-      if (data.records.length > 0) {
-        const maxRowLine = Math.max(...data.records.map(record => record.rowLine))
-        lastMaxRowLine.value = maxRowLine
-        console.log('当前页最大行号:', maxRowLine)
-      }
+
       
       console.log('处理后的表格数据:', tableData.value)
       console.log('表头:', tableHeaders.value)
@@ -230,7 +224,6 @@ const handleSizeChange = (size: number) => {
   // 重置分页状态
   pagination.pageSize = size
   pagination.current = 1
-  lastMaxRowLine.value = 0 // 重置最大行号
   
   // 重新加载数据
   loadExcelData()
@@ -241,11 +234,6 @@ const handleSizeChange = (size: number) => {
  */
 const handleCurrentChange = (page: number) => {
   console.log('页码变化:', page)
-  
-  // 如果跳转到第一页，重置最大行号
-  if (page === 1) {
-    lastMaxRowLine.value = 0
-  }
   
   // 更新页码
   pagination.current = page
