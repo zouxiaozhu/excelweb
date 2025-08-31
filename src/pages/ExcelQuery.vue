@@ -170,16 +170,26 @@
               border
               style="width: 100%"
             >
-              <el-table-column prop="excelFile" label="任务名" min-width="200" />
-              <el-table-column prop="status" label="状态" width="120">
+              <el-table-column prop="excelFile" label="任务名" min-width="250" />
+              <el-table-column prop="status" label="状态" width="100">
                 <template #default="{ row }">
                   <el-tag :type="getStatusType(row.status)">
                     {{ getStatusText(row.status) }}
                   </el-tag>
                 </template>
               </el-table-column>
-              <el-table-column prop="createTime" label="创建时间" width="180" />
-              <el-table-column label="操作" width="400">
+              <el-table-column label="开始时间" width="160">
+                <template #default="{ row }">
+                  {{ formatTime(row.startTime) }}
+                </template>
+              </el-table-column>
+              <el-table-column label="结束时间" width="160">
+                <template #default="{ row }">
+                  {{ formatTime(row.endTime) }}
+                </template>
+              </el-table-column>
+              <el-table-column prop="createTime" label="创建时间" width="160" />
+              <el-table-column label="操作" min-width="300">
                 <template #default="{ row }">
                   <el-button 
                     type="primary" 
@@ -249,6 +259,12 @@
       :task="currentTask"
       @save="handleTaskSettingSave"
     />
+
+    <!-- Excel数据详情弹框 -->
+    <ExcelDataDetailDialog
+      v-model="showExcelDetailDialog"
+      :task="currentTask"
+    />
   </div>
 </template>
 
@@ -274,6 +290,7 @@ import { useGlobalStore } from '@/store'
 import AuthModal from '@/components/AuthModal.vue'
 import LoginChoiceDialog from '@/components/LoginChoiceDialog.vue'
 import TaskSettingDialog from '@/components/TaskSettingDialog.vue'
+import ExcelDataDetailDialog from '@/components/ExcelDataDetailDialog.vue'
 import type { 
   FileUploadResponse, 
   ExcelParseResponse, 
@@ -281,6 +298,7 @@ import type {
   ExcelSheet,
   TaskSettingData
 } from '@/typings/api'
+import { debug } from 'console'
 
 const router = useRouter()
 const globalStore = useGlobalStore()
@@ -290,6 +308,7 @@ const showAuthModal = ref(false)
 const showLoginChoiceDialog = ref(false)
 const hideExperienceWarning = ref(false)
 const showTaskSettingDialog = ref(false)
+const showExcelDetailDialog = ref(false)
 const currentTask = ref<ExcelParseTask | null>(null)
 
 // 计算属性 - 登录状态
@@ -456,6 +475,8 @@ const refreshTasks = () => {
  */
 const getStatusType = (status: string) => {
   switch (status) {
+    case 'Enable': return 'success'
+    case 'Disable': return 'info'
     case 'completed': return 'success'
     case 'failed': return 'danger'
     case 'processing': return 'warning'
@@ -468,6 +489,8 @@ const getStatusType = (status: string) => {
  */
 const getStatusText = (status: string) => {
   switch (status) {
+    case 'Enable': return '启用'
+    case 'Disable': return '禁用'
     case 'pending': return '待处理'
     case 'processing': return '处理中'
     case 'completed': return '已完成'
@@ -479,15 +502,9 @@ const getStatusText = (status: string) => {
 /**
  * 查看任务详情
  */
-const viewTaskDetail = async (task: ExcelParseTask) => {
-  try {
-    const detail = await excelApi.getTaskDetail(task.taskId)
-    // 这里可以打开详情弹窗或跳转到详情页
-    console.log('Task detail:', detail)
-    ElMessage.success('详情加载完成')
-  } catch (error) {
-    ElMessage.error('加载详情失败')
-  }
+const viewTaskDetail = (task: ExcelParseTask) => {
+  currentTask.value = task
+  showExcelDetailDialog.value = true
 }
 
 /**
@@ -560,7 +577,7 @@ const deleteTask = async (task: ExcelParseTask) => {
     )
     
     // 调用删除API
-    await excelApi.deleteTask(task.id)
+    await excelApi.deleteTask(task.taskId || (task as any).id)
     
     ElMessage.success('删除成功')
     console.log('删除任务:', task)
@@ -665,19 +682,26 @@ const formatFileSize = (bytes: number): string => {
 }
 
 /**
+ * 格式化时间
+ */
+const formatTime = (time: string | null | undefined): string => {
+  if (!time) return '未设置'
+  return time
+}
+
+/**
  * 处理任务设置保存
  */
 const handleTaskSettingSave = async (settingData: TaskSettingData) => {
   try {
-    console.log('保存任务设置:', settingData)
-    
-    if (!currentTask.value?.taskId) {
+    const taskId = currentTask.value?.taskId || (currentTask.value as any)?.id
+    if (!taskId) {
       ElMessage.error('任务ID不存在')
       return
     }
     
     // 调用API保存任务设置
-    await excelApi.updateTaskSetting(currentTask.value.taskId, settingData)
+    await excelApi.updateTaskSetting(taskId, settingData)
     
     ElMessage.success('任务设置保存成功')
     showTaskSettingDialog.value = false
@@ -685,8 +709,8 @@ const handleTaskSettingSave = async (settingData: TaskSettingData) => {
     // 重新加载任务列表
     await loadTasks()
   } catch (error: any) {
-    ElMessage.error('保存设置失败：' + (error.message || '未知错误'))
     console.error('保存任务设置错误:', error)
+    ElMessage.error('保存设置失败：' + (error.message || '未知错误'))
   }
 }
 </script>
@@ -695,6 +719,7 @@ const handleTaskSettingSave = async (settingData: TaskSettingData) => {
 .excel-query-page {
   min-height: 100vh;
   background-color: #f5f5f5;
+  width: 100%;
 }
 
 .experience-warning {

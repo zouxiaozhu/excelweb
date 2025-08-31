@@ -10,7 +10,9 @@ import type {
     ExcelParseResponse,
     ExcelParseTask,
     PageParams,
-    PageResponse
+    PageResponse,
+    UpdateTaskRequest,
+    ApiResponse
 } from '@/typings/api'
 
 /**
@@ -81,10 +83,16 @@ export const excelApi = {
      * @returns 更新结果
      */
     updateTaskSetting(taskId: string, settings: any): Promise<ApiResponse> {
-        return http.post(`/excel/updateTaskSetting`, {
-            taskId,
-            ...settings
-        })
+        const requestData: UpdateTaskRequest = {
+            id: taskId,
+            excelFile: settings.excelFile,
+            status: settings.status,
+            startTime: settings.startTime || null,
+            endTime: settings.endTime || null,
+            extendData: settings.extendData
+        }
+
+        return http.post(`/excel/updateParseFile`, requestData)
     },
 
     /**
@@ -94,6 +102,18 @@ export const excelApi = {
      */
     deleteTask(taskId: string): Promise<ApiResponse> {
         return http.delete(`/excel/deleteParseFile?taskId=${taskId}`)
+    },
+
+    /**
+     * 获取Excel数据详情
+     * @param taskId 任务ID
+     * @param params 分页参数
+     * @returns Excel数据详情
+     */
+    getExcelData(taskId: string, params: PageParams): Promise<ApiResponse> {
+        return http.get(`/excel/getExcelData?taskId=${taskId}`, {
+            params
+        })
     }
 }
 

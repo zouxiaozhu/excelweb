@@ -80,7 +80,13 @@ export interface ExcelParseTask {
     errorMessage?: string
     fileInfo?: FileInfo,
     excelFile: string,
+    extendData?: ExcelParseExtendData
+    startTime?: string
+    endTime?: string
 }
+
+// 任务状态映射
+export type TaskStatus = 'Enable' | 'Disable'
 
 // 分页参数
 export interface PageParams {
@@ -99,14 +105,30 @@ export interface PageResponse<T> {
 
 // 任务设置数据
 export interface TaskSettingData {
-    taskName: string
-    status: 'enabled' | 'disabled' | 'paused'
+    excelFile: string
+    status: 'Enable' | 'Disable'
     startTime: string
     endTime: string
-    selectedFields: string[]
-    dataFilter: string
-    sortField: string
-    sortOrder: 'asc' | 'desc'
+    extendData: {
+        headers: string[]
+        searchHeaders: string[]
+    }
+}
+
+// 扩展数据
+export interface ExcelParseExtendData {
+    headers: string[]
+    searchHeaders: string[]
+}
+
+// 更新任务请求参数
+export interface UpdateTaskRequest {
+    id: string
+    excelFile: string
+    status: string
+    startTime: string | null
+    endTime: string | null
+    extendData: ExcelParseExtendData
 }
 
 // 任务设置字段选项

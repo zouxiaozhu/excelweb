@@ -1,7 +1,7 @@
 <template>
   <el-dialog
     v-model="visible"
-    title="编辑任务"
+    title=""
     width="600px"
     :close-on-click-modal="false"
     :close-on-press-escape="false"
@@ -14,11 +14,10 @@
       class="task-setting-form"
     >
       <!-- 任务名称 -->
-      <el-form-item label="任务名称" prop="taskName">
+      <el-form-item label="任务名称" prop="excelFile">
         <el-input
-          v-model="formData.taskName"
+          v-model="formData.excelFile"
           placeholder="请输入任务名称"
-          :disabled="true"
         />
       </el-form-item>
 
@@ -29,9 +28,8 @@
           placeholder="请选择状态"
           style="width: 100%"
         >
-          <el-option label="启用" value="enabled" />
-          <el-option label="禁用" value="disabled" />
-          <el-option label="暂停" value="paused" />
+          <el-option label="启用" value="Enable" />
+          <el-option label="禁用" value="Disable" />
         </el-select>
       </el-form-item>
 
@@ -60,9 +58,9 @@
       </el-form-item>
 
       <!-- 多选字段 -->
-      <el-form-item label="多选字段" prop="selectedFields">
+      <el-form-item label="多选字段" prop="extendData.searchHeaders">
         <div class="fields-container">
-          <el-checkbox-group v-model="formData.selectedFields">
+          <el-checkbox-group v-model="formData.extendData.searchHeaders" class="fields-grid">
             <el-checkbox
               v-for="field in availableFields"
               :key="field.value"
@@ -73,51 +71,6 @@
             </el-checkbox>
           </el-checkbox-group>
         </div>
-      </el-form-item>
-
-      <!-- 高级设置 -->
-      <el-form-item label="高级设置">
-        <el-collapse v-model="activeCollapse">
-          <el-collapse-item title="数据处理选项" name="dataProcessing">
-            <el-form-item label="数据过滤">
-              <el-input
-                v-model="formData.dataFilter"
-                type="textarea"
-                :rows="3"
-                placeholder="请输入数据过滤条件，例如：日期 >= '2024-01-01' AND 费用 > 100"
-              />
-            </el-form-item>
-            <el-form-item label="排序规则">
-              <el-select
-                v-model="formData.sortField"
-                placeholder="选择排序字段"
-                style="width: 200px; margin-right: 10px;"
-              >
-                <el-option
-                  v-for="field in availableFields"
-                  :key="field.value"
-                  :label="field.label"
-                  :value="field.value"
-                />
-              </el-select>
-              <el-select
-                v-model="formData.sortOrder"
-                placeholder="排序方式"
-                style="width: 120px;"
-              >
-                <el-option label="升序" value="asc" />
-                <el-option label="降序" value="desc" />
-              </el-select>
-            </el-form-item>
-            <el-form-item label="快速操作">
-              <el-button-group>
-                <el-button size="small" @click="selectAllFields">全选</el-button>
-                <el-button size="small" @click="clearAllFields">清空</el-button>
-                <el-button size="small" @click="selectCommonFields">常用字段</el-button>
-              </el-button-group>
-            </el-form-item>
-          </el-collapse-item>
-        </el-collapse>
       </el-form-item>
     </el-form>
 
@@ -164,59 +117,36 @@ const visible = computed({
 
 const formRef = ref<FormInstance>()
 const saving = ref(false)
-const activeCollapse = ref(['dataProcessing'])
 
 // 表单数据
 const formData = reactive<TaskSettingData>({
-  taskName: '',
-  status: 'enabled',
+  excelFile: '',
+  status: 'Disable',
   startTime: '',
   endTime: '',
-  selectedFields: [],
-  dataFilter: '',
-  sortField: '',
-  sortOrder: 'asc'
+  extendData: {
+    headers: [],
+    searchHeaders: []
+  }
 })
 
-// 可用字段列表 - 根据实际Excel列名动态生成
-const availableFields = ref<TaskFieldOption[]>([
-  { label: '序号', value: 'serialNumber' },
-  { label: '日期', value: 'date' },
-  { label: '使用时间', value: 'usageTime' },
-  { label: '结束时间', value: 'endTime' },
-  { label: '上车地点', value: 'pickupLocation' },
-  { label: '途径地点', value: 'viaLocation' },
-  { label: '下车地点', value: 'dropoffLocation' },
-  { label: '车牌号', value: 'plateNumber' },
-  { label: '司机姓名', value: 'driverName' },
-  { label: '联系电话', value: 'phoneNumber' },
-  { label: '费用', value: 'cost' },
-  { label: '备注', value: 'remarks' }
-])
+// 可用字段列表 - 从后端数据动态生成
+const availableFields = ref<TaskFieldOption[]>([])
 
 // 表单验证规则
 const formRules: FormRules = {
-  taskName: [
+  excelFile: [
     { required: true, message: '请输入任务名称', trigger: 'blur' }
   ],
   status: [
     { required: true, message: '请选择状态', trigger: 'change' }
-  ],
-  startTime: [
-    { required: true, message: '请选择开始时间', trigger: 'change' }
-  ],
-  endTime: [
-    { required: true, message: '请选择结束时间', trigger: 'change' }
-  ],
-  selectedFields: [
-    { required: true, message: '请至少选择一个字段', trigger: 'change' }
   ]
 }
 
 // 监听任务变化，初始化表单数据
 watch(() => props.task, (newTask) => {
   if (newTask) {
-    initializeFormData(newTask)
+     initializeFormData(newTask)
   }
 }, { immediate: true })
 
@@ -224,14 +154,33 @@ watch(() => props.task, (newTask) => {
  * 初始化表单数据
  */
 const initializeFormData = (task: ExcelParseTask) => {
-  formData.taskName = task.fileName || ''
-  formData.status = 'enabled'
-  formData.startTime = ''
-  formData.endTime = ''
-  formData.selectedFields = availableFields.value.map(field => field.value) // 默认全选
-  formData.dataFilter = ''
-  formData.sortField = ''
-  formData.sortOrder = 'asc'
+  formData.excelFile = task.excelFile || task.fileName || ''
+  // 从任务数据中获取实际状态，如果没有则默认为Disable
+  formData.status = (task as any).status || 'Disable'
+  formData.startTime = task.startTime || ''
+  formData.endTime = task.endTime || ''
+  // 从任务数据中获取字段信息
+  const extendData = (task as any).extendData
+  if (extendData && extendData.headers) {
+    // 设置可用字段选项 - 使用headers作为所有可选字段
+    availableFields.value = extendData.headers.map((header: string) => ({
+      label: header,
+      value: header
+    }))
+    
+    // 设置extendData
+    formData.extendData = {
+      headers: extendData.headers,
+      searchHeaders: extendData.searchHeaders || []
+    }
+  } else {
+    // 如果没有extendData，清空字段列表
+    availableFields.value = []
+    formData.extendData = {
+      headers: [],
+      searchHeaders: []
+    }
+  }
 }
 
 /**
@@ -241,40 +190,22 @@ const handleCancel = () => {
   visible.value = false
 }
 
-/**
- * 全选字段
- */
-const selectAllFields = () => {
-  formData.selectedFields = availableFields.value.map(field => field.value)
-}
 
-/**
- * 清空字段选择
- */
-const clearAllFields = () => {
-  formData.selectedFields = []
-}
-
-/**
- * 选择常用字段
- */
-const selectCommonFields = () => {
-  const commonFields = ['serialNumber', 'date', 'pickupLocation', 'dropoffLocation', 'cost']
-  formData.selectedFields = commonFields
-}
 
 /**
  * 处理保存
  */
 const handleSave = async () => {
-  if (!formRef.value) return
+  if (!formRef.value) {
+    return
+  }
 
   try {
     await formRef.value.validate()
     
     saving.value = true
     
-    // 验证时间逻辑
+    // 验证时间逻辑（如果两个时间都填写了，则验证开始时间早于结束时间）
     if (formData.startTime && formData.endTime) {
       const startTime = new Date(formData.startTime)
       const endTime = new Date(formData.endTime)
@@ -285,11 +216,7 @@ const handleSave = async () => {
       }
     }
 
-    // 验证至少选择一个字段
-    if (formData.selectedFields.length === 0) {
-      ElMessage.error('请至少选择一个字段')
-      return
-    }
+
 
     // 发送保存事件
     emit('save', { ...formData })
@@ -298,6 +225,7 @@ const handleSave = async () => {
     visible.value = false
   } catch (error) {
     console.error('表单验证失败:', error)
+    ElMessage.error('表单验证失败，请检查输入')
   } finally {
     saving.value = false
   }
@@ -327,14 +255,31 @@ defineExpose({
   overflow-y: auto;
 }
 
-.field-checkbox {
-  display: block;
-  margin-bottom: 10px;
-  margin-right: 0;
+.fields-grid {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 10px !important;
+  width: 100% !important;
 }
 
-.field-checkbox:last-child {
-  margin-bottom: 0;
+.field-checkbox {
+  margin: 0 !important;
+  min-width: 120px !important;
+  flex: 0 0 auto !important;
+}
+
+:deep(.el-checkbox-group) {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 10px !important;
+  width: 100% !important;
+}
+
+:deep(.el-checkbox) {
+  margin: 0 !important;
+  margin-right: 0 !important;
+  min-width: 120px !important;
+  flex: 0 0 auto !important;
 }
 
 .dialog-footer {
@@ -344,11 +289,6 @@ defineExpose({
 :deep(.el-checkbox__label) {
   font-size: 14px;
   color: #606266;
-}
-
-:deep(.el-collapse-item__header) {
-  font-size: 14px;
-  font-weight: 500;
 }
 
 :deep(.el-form-item__label) {

@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>任务设置弹框测试</title>
+    <link rel="stylesheet" href="https://unpkg.com/element-plus/dist/index.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .test-button {
+            background: #409eff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .test-button:hover {
+            background: #337ecc;
+        }
+
+        .fields-grid {
+            display: flex !important;
+            flex-wrap: wrap !important;
+            gap: 10px !important;
+            width: 100% !important;
+        }
+
+        .field-checkbox {
+            margin: 0 !important;
+            min-width: 120px !important;
+            flex: 0 0 auto !important;
+        }
+
+        .el-checkbox-group {
+            display: flex !important;
+            flex-wrap: wrap !important;
+            gap: 10px !important;
+            width: 100% !important;
+        }
+
+        .el-checkbox {
+            margin: 0 !important;
+            margin-right: 0 !important;
+            min-width: 120px !important;
+            flex: 0 0 auto !important;
+        }
+
+        .test-result {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f0f9ff;
+            border: 1px solid #b3d8ff;
+            border-radius: 4px;
+        }
+
+        .fields-container {
+            border: 1px solid #dcdfe6;
+            border-radius: 4px;
+            padding: 15px;
+            background-color: #fafafa;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="test-container">
+        <h1>任务设置弹框修改验证</h1>
+
+        <h2>修改内容：</h2>
+        <ul>
+            <li>✅ 移除了高级设置部分（数据过滤、排序规则、快速操作）</li>
+            <li>✅ 多选字段改为横向flexbox布局</li>
+            <li>✅ 简化了表单数据结构</li>
+        </ul>
+
+        <h2>多选字段横向布局预览：</h2>
+        <div class="fields-container">
+            <div class="fields-grid">
+                <div class="field-checkbox">序号</div>
+                <div class="field-checkbox">日期</div>
+                <div class="field-checkbox">使用时间</div>
+                <div class="field-checkbox">结束时间</div>
+                <div class="field-checkbox">上车地点</div>
+                <div class="field-checkbox">途径地点</div>
+                <div class="field-checkbox">下车地点</div>
+                <div class="field-checkbox">车牌号</div>
+                <div class="field-checkbox">司机姓名</div>
+                <div class="field-checkbox">联系电话</div>
+                <div class="field-checkbox">费用</div>
+                <div class="field-checkbox">备注</div>
+            </div>
+        </div>
+
+        <div class="test-result">
+            <h3>测试说明：</h3>
+            <p>1. 字段选项现在采用flexbox布局，横向排列并自动换行</p>
+            <p>2. 移除了高级设置折叠面板</p>
+            <p>3. 表单更加简洁，只保留基础设置</p>
+            <p>4. 使用 !important 确保样式优先级</p>
+            <p>5. 每个字段最小宽度120px，确保可读性</p>
+        </div>
+
+        <button class="test-button" onclick="window.open('http://localhost:5173', '_blank')">
+            打开项目测试
+        </button>
+    </div>
+</body>
+
+</html>
