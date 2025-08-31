@@ -89,6 +89,7 @@
                   size="large"
                   @click="handleReupload"
                   style="margin-left: 10px;"
+                  :class="{ 'hidden': !showReuploadButton || !currentFileInfo }"
                 >
                   重新上传
                 </el-button>
@@ -169,7 +170,7 @@
               border
               style="width: 100%"
             >
-              <el-table-column prop="fileName" label="文件名" min-width="200" />
+              <el-table-column prop="excelFile" label="任务名" min-width="200" />
               <el-table-column prop="status" label="状态" width="120">
                 <template #default="{ row }">
                   <el-tag :type="getStatusType(row.status)">
@@ -178,11 +179,9 @@
                 </template>
               </el-table-column>
               <el-table-column prop="createTime" label="创建时间" width="180" />
-              <el-table-column prop="completeTime" label="完成时间" width="180" />
-              <el-table-column label="操作" width="150">
+              <el-table-column label="操作" width="400">
                 <template #default="{ row }">
                   <el-button 
-                    v-if="row.status === 'completed'"
                     type="primary" 
                     size="small"
                     @click="viewTaskDetail(row)"
@@ -190,12 +189,32 @@
                     查看详情
                   </el-button>
                   <el-button 
-                    v-else-if="row.status === 'failed'"
+                    type="success" 
+                    size="small"
+                    @click="downloadFile(row)"
+                  >
+                    下载文件
+                  </el-button>
+                  <el-button 
+                    type="warning" 
+                    size="small"
+                    @click="editTask(row)"
+                  >
+                    设置
+                  </el-button>
+                  <el-button 
+                    type="info" 
+                    size="small"
+                    @click="copyTask(row)"
+                  >
+                    复制
+                  </el-button>
+                  <el-button 
                     type="danger" 
                     size="small"
-                    @click="showError(row)"
+                    @click="deleteTask(row)"
                   >
-                    查看错误
+                    删除
                   </el-button>
                 </template>
               </el-table-column>
@@ -230,6 +249,13 @@
       v-model="showAuthModal"
       @login-success="handleLoginSuccess"
     />
+
+    <!-- 任务设置弹框 -->
+    <TaskSettingDialog
+      v-model="showTaskSettingDialog"
+      :task="currentTask"
+      @save="handleTaskSettingSave"
+    />
   </div>
 </template>
 
@@ -245,7 +271,7 @@
  * @store globalStore - 全局状态管理
  */
 
-import { ref, reactive, onMounted, computed } from 'vue'
+import { ref, reactive, onMounted, computed, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { ArrowLeft, Refresh } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -254,11 +280,13 @@ import { excelApi } from '@/services/api'
 import { useGlobalStore } from '@/store'
 import AuthModal from '@/components/AuthModal.vue'
 import LoginChoiceDialog from '@/components/LoginChoiceDialog.vue'
+import TaskSettingDialog from '@/components/TaskSettingDialog.vue'
 import type { 
   FileUploadResponse, 
   ExcelParseResponse, 
   ExcelParseTask,
-  ExcelSheet
+  ExcelSheet,
+  TaskSettingData
 } from '@/typings/api'
 
 const router = useRouter()
@@ -268,6 +296,8 @@ const globalStore = useGlobalStore()
 const showAuthModal = ref(false)
 const showLoginChoiceDialog = ref(false)
 const hideExperienceWarning = ref(false)
+const showTaskSettingDialog = ref(false)
+const currentTask = ref<ExcelParseTask | null>(null)
 
 // 计算属性 - 登录状态
 const isLoggedIn = computed(() => globalStore.isLoggedIn)
@@ -278,6 +308,7 @@ const currentStep = ref(0)
 const parsing = ref(false)
 const loadingTasks = ref(false)
 const activeSheet = ref('0')
+const showReuploadButton = ref(true)
 
 const currentFileInfo = ref<FileUploadResponse | null>(null)
 const parseResult = ref<ExcelParseResponse | null>(null)
@@ -297,14 +328,6 @@ const goBack = () => {
   router.push('/')
 }
 
-/**
- * 格式化文件大小
- */
-const formatFileSize = (size: number): string => {
-  if (size < 1024) return size + ' B'
-  if (size < 1024 * 1024) return (size / 1024).toFixed(1) + ' KB'
-  return (size / (1024 * 1024)).toFixed(1) + ' MB'
-}
 
 /**
  * 处理文件上传成功
@@ -314,9 +337,10 @@ const handleUploadSuccess = ({ response }: { response: FileUploadResponse }) => 
   globalStore.setCurrentFile({
     fileId: response.fileId,
     fileName: response.fileName,
-    fileSize: response.fileSize
+    fileSize: response.fileSize,
   })
   currentStep.value = 1
+  showReuploadButton.value = true
   ElMessage.success('文件上传成功！')
 }
 
@@ -331,6 +355,9 @@ const handleUploadError = (error: Error) => {
  * 处理重新上传
  */
 const handleReupload = () => {
+  // 立即隐藏重新上传按钮
+  showReuploadButton.value = false
+  
   // 清空当前文件信息
   currentFileInfo.value = null
   parseResult.value = null
@@ -353,21 +380,8 @@ const handleParse = async () => {
 
   parsing.value = true
   try {
-    const result = await excelApi.parse(currentFileInfo.value.fileId)
-    parseResult.value = result
-    
-    if (result.status === 'completed') {
-      currentStep.value = 2
-      ElMessage.success('解析完成！')
-      // 刷新任务列表
-      await loadTasks()
-    } else if (result.status === 'failed') {
-      ElMessage.error('解析失败：' + result.message)
-    } else {
-      ElMessage.info('解析任务已提交，请稍候查看结果')
-      // 轮询检查解析状态
-      pollParseStatus(result.taskId)
-    }
+    await excelApi.parse(currentFileInfo.value.fileId)
+    await loadTasks()
   } catch (error) {
     ElMessage.error('解析失败，请重试')
     console.error('Parse error:', error)
@@ -427,9 +441,8 @@ const loadTasks = async () => {
       page: pagination.current,
       pageSize: pagination.pageSize
     })
-    taskList.value = response.list
+    taskList.value = response.records
     pagination.total = response.total
-    globalStore.setExcelTasks(response.list)
   } catch (error) {
     ElMessage.error('加载任务列表失败')
     console.error('Load tasks error:', error)
@@ -496,6 +509,76 @@ const showError = (task: ExcelParseTask) => {
 }
 
 /**
+ * 下载文件
+ */
+const downloadFile = (task: ExcelParseTask) => {
+  try {
+    // 检查是否有文件信息
+    if (!task.fileInfo || !task.fileInfo.externalUrl) {
+      ElMessage.error('文件下载链接不存在')
+      return
+    }
+
+    const downloadUrl = task.fileInfo.externalUrl
+    
+    // 创建下载链接
+    const link = document.createElement('a')
+    link.href = downloadUrl
+    link.target = '_blank'
+    link.rel = 'noopener noreferrer'
+    
+    // 触发下载
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    
+    ElMessage.success('开始下载文件')
+    console.log('下载文件:', task.fileInfo.fileName, 'URL:', downloadUrl)
+  } catch (error: any) {
+    ElMessage.error('下载失败：' + (error.message || '未知错误'))
+    console.error('下载文件错误:', error)
+  }
+}
+
+/**
+ * 设置任务
+ */
+const editTask = (task: ExcelParseTask) => {
+  currentTask.value = task
+  showTaskSettingDialog.value = true
+}
+
+/**
+ * 复制任务
+ */
+const copyTask = (task: ExcelParseTask) => {
+  ElMessage.info('复制功能开发中...')
+  console.log('复制任务:', task)
+}
+
+/**
+ * 删除任务
+ */
+const deleteTask = (task: ExcelParseTask) => {
+  ElMessageBox.confirm(
+    `确定要删除任务 "${task.fileName}" 吗？`,
+    '确认删除',
+    {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning',
+    }
+  ).then(() => {
+    ElMessage.success('删除成功')
+    console.log('删除任务:', task)
+    // 这里可以调用删除API
+    // loadTasks() // 重新加载列表
+  }).catch(() => {
+    ElMessage.info('已取消删除')
+  })
+}
+
+/**
  * 处理页大小变化
  */
 const handleSizeChange = (size: number) => {
@@ -520,6 +603,41 @@ onMounted(() => {
   }
   
   loadTasks()
+  
+  // 添加一些示例数据用于演示
+  if (process.env.NODE_ENV === 'development') {
+    setTimeout(() => {
+      if (taskList.value.length === 0) {
+        taskList.value = [
+          {
+            taskId: 'demo-1',
+            fileName: '444.xlsx',
+            status: 'completed',
+            createTime: '2024-01-15 10:30:00',
+            fileInfo: {
+              fileId: 'file-1',
+              fileName: '444.xlsx',
+              fileSize: 1024000,
+              externalUrl: '#'
+            }
+          },
+          {
+            taskId: 'demo-2',
+            fileName: '车辆调度表.xlsx',
+            status: 'processing',
+            createTime: '2024-01-15 09:15:00',
+            fileInfo: {
+              fileId: 'file-2',
+              fileName: '车辆调度表.xlsx',
+              fileSize: 2048000,
+              externalUrl: '#'
+            }
+          }
+        ]
+        pagination.total = taskList.value.length
+      }
+    }, 1000)
+  }
 })
 
 /**
@@ -534,6 +652,43 @@ const handleLoginSuccess = () => {
  */
 const handleShowNormalLogin = () => {
   showAuthModal.value = true
+}
+
+/**
+ * 格式化文件大小
+ */
+const formatFileSize = (bytes: number): string => {
+  if (bytes === 0) return '0 B'
+  const k = 1024
+  const sizes = ['B', 'KB', 'MB', 'GB']
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+}
+
+/**
+ * 处理任务设置保存
+ */
+const handleTaskSettingSave = async (settingData: TaskSettingData) => {
+  try {
+    console.log('保存任务设置:', settingData)
+    
+    if (!currentTask.value?.taskId) {
+      ElMessage.error('任务ID不存在')
+      return
+    }
+    
+    // 调用API保存任务设置
+    await excelApi.updateTaskSetting(currentTask.value.taskId, settingData)
+    
+    ElMessage.success('任务设置保存成功')
+    showTaskSettingDialog.value = false
+    
+    // 重新加载任务列表
+    await loadTasks()
+  } catch (error: any) {
+    ElMessage.error('保存设置失败：' + (error.message || '未知错误'))
+    console.error('保存任务设置错误:', error)
+  }
 }
 </script>
 
@@ -641,6 +796,10 @@ const handleShowNormalLogin = () => {
 .pagination-wrapper {
   margin-top: 20px;
   text-align: center;
+}
+
+.hidden {
+  display: none !important;
 }
 
 @media (max-width: 768px) {

@@ -139,7 +139,7 @@
                         <div class="file-details">
                           <div class="file-name">{{ file.fileName }}</div>
                           <div class="file-meta">
-                            {{ formatFileSize(file.fileSize) }} • 
+                            {{ (file.fileSize) }} • 
                             {{ formatTime(file.uploadTime) }}
                           </div>
                         </div>
@@ -344,15 +344,6 @@ const loadingHistory = ref(false)
  */
 const goBack = () => {
   router.push('/')
-}
-
-/**
- * 格式化文件大小
- */
-const formatFileSize = (size: number): string => {
-  if (size < 1024) return size + ' B'
-  if (size < 1024 * 1024) return (size / 1024).toFixed(1) + ' KB'
-  return (size / (1024 * 1024)).toFixed(1) + ' MB'
 }
 
 /**

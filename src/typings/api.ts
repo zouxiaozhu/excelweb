@@ -62,6 +62,14 @@ export interface ExcelCell {
     type: 'string' | 'number' | 'boolean' | 'date' | 'formula'
 }
 
+// 文件信息
+export interface FileInfo {
+    fileId: string
+    fileName: string
+    fileSize: number
+    externalUrl?: string
+}
+
 // Excel解析任务列表
 export interface ExcelParseTask {
     taskId: string
@@ -70,6 +78,7 @@ export interface ExcelParseTask {
     createTime: string
     completeTime?: string
     errorMessage?: string
+    fileInfo?: FileInfo
 }
 
 // 分页参数
@@ -85,4 +94,22 @@ export interface PageResponse<T> {
     page: number
     pageSize: number
     totalPages: number
+}
+
+// 任务设置数据
+export interface TaskSettingData {
+    taskName: string
+    status: 'enabled' | 'disabled' | 'paused'
+    startTime: string
+    endTime: string
+    selectedFields: string[]
+    dataFilter: string
+    sortField: string
+    sortOrder: 'asc' | 'desc'
+}
+
+// 任务设置字段选项
+export interface TaskFieldOption {
+    label: string
+    value: string
 }

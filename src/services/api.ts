@@ -49,9 +49,9 @@ export const excelApi = {
      * @returns 解析结果
      */
     parse(fileId: string): Promise<ExcelParseResponse> {
-        return http.post('/excel/parse', {
-            fileId
-        })
+        const formData = new FormData()
+        formData.append('fileId', fileId)
+        return http.postFile('/excel/parse', formData)
     },
 
     /**
@@ -72,6 +72,19 @@ export const excelApi = {
      */
     getTaskDetail(taskId: string): Promise<ExcelParseResponse> {
         return http.get(`/excel/getParseFileDetailPage?taskId=${taskId}`)
+    },
+
+    /**
+     * 更新任务设置
+     * @param taskId 任务ID
+     * @param settings 任务设置
+     * @returns 更新结果
+     */
+    updateTaskSetting(taskId: string, settings: any): Promise<ApiResponse> {
+        return http.post(`/excel/updateTaskSetting`, {
+            taskId,
+            ...settings
+        })
     }
 }
 
