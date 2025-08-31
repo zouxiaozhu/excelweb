@@ -189,6 +189,40 @@
                 </template>
               </el-table-column>
               <el-table-column prop="createTime" label="创建时间" width="160" />
+              <el-table-column label="时间状态" width="120">
+                <template #default="{ row }">
+                  <div class="time-status-container">
+                    <el-tag 
+                      v-if="isTaskNotStarted(row)" 
+                      type="warning" 
+                      size="small"
+                    >
+                      未开始
+                    </el-tag>
+                    <el-tag 
+                      v-else-if="isTaskExpired(row)" 
+                      type="danger" 
+                      size="small"
+                    >
+                      已过期
+                    </el-tag>
+                    <el-tag 
+                      v-else-if="row.startTime || row.endTime" 
+                      type="success" 
+                      size="small"
+                    >
+                      进行中
+                    </el-tag>
+                    <el-tag 
+                      v-else 
+                      type="info" 
+                      size="small"
+                    >
+                      无时间限制
+                    </el-tag>
+                  </div>
+                </template>
+              </el-table-column>
               <el-table-column label="操作" min-width="300">
                 <template #default="{ row }">
                   <el-button 
@@ -451,7 +485,7 @@ const loadTasks = async () => {
   try {
     const response = await excelApi.getExcelFileList({
       page: pagination.current,
-      pageSize: pagination.pageSize
+      size: pagination.pageSize
     })
     taskList.value = response.records
     pagination.total = response.total
@@ -577,7 +611,7 @@ const deleteTask = async (task: ExcelParseTask) => {
     )
     
     // 调用删除API
-    await excelApi.deleteTask(task.taskId || (task as any).id)
+    await excelApi.deleteTask(task.id || task.taskId)
     
     ElMessage.success('删除成功')
     console.log('删除任务:', task)
@@ -620,40 +654,7 @@ onMounted(() => {
   
   loadTasks()
   
-  // 添加一些示例数据用于演示
-  if (process.env.NODE_ENV === 'development') {
-    setTimeout(() => {
-      if (taskList.value.length === 0) {
-        taskList.value = [
-          {
-            taskId: 'demo-1',
-            fileName: '444.xlsx',
-            status: 'completed',
-            createTime: '2024-01-15 10:30:00',
-            fileInfo: {
-              fileId: 'file-1',
-              fileName: '444.xlsx',
-              fileSize: 1024000,
-              externalUrl: '#'
-            }
-          },
-          {
-            taskId: 'demo-2',
-            fileName: '车辆调度表.xlsx',
-            status: 'processing',
-            createTime: '2024-01-15 09:15:00',
-            fileInfo: {
-              fileId: 'file-2',
-              fileName: '车辆调度表.xlsx',
-              fileSize: 2048000,
-              externalUrl: '#'
-            }
-          }
-        ]
-        pagination.total = taskList.value.length
-      }
-    }, 1000)
-  }
+
 })
 
 /**
@@ -690,11 +691,47 @@ const formatTime = (time: string | null | undefined): string => {
 }
 
 /**
+ * 判断任务是否过期
+ */
+const isTaskExpired = (task: ExcelParseTask): boolean => {
+  const now = new Date()
+  
+  // 如果设置了开始时间，且当前时间在开始时间之前，则不算过期
+  if (task.startTime) {
+    const startTime = new Date(task.startTime)
+    if (now < startTime) {
+      return false // 还未开始，不算过期
+    }
+  }
+  
+  // 如果设置了结束时间，且当前时间在结束时间之后，则算过期
+  if (task.endTime) {
+    const endTime = new Date(task.endTime)
+    if (now > endTime) {
+      return true // 已过期
+    }
+  }
+  
+  return false
+}
+
+/**
+ * 判断任务是否未开始
+ */
+const isTaskNotStarted = (task: ExcelParseTask): boolean => {
+  if (!task.startTime) return false
+  
+  const now = new Date()
+  const startTime = new Date(task.startTime)
+  return now < startTime
+}
+
+/**
  * 处理任务设置保存
  */
 const handleTaskSettingSave = async (settingData: TaskSettingData) => {
   try {
-    const taskId = currentTask.value?.taskId || (currentTask.value as any)?.id
+    const taskId = currentTask.value?.id || currentTask.value?.taskId
     if (!taskId) {
       ElMessage.error('任务ID不存在')
       return
@@ -824,6 +861,15 @@ const handleTaskSettingSave = async (settingData: TaskSettingData) => {
 
 .hidden {
   display: none !important;
+}
+
+.status-container,
+.time-container,
+.time-status-container {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
 }
 
 @media (max-width: 768px) {

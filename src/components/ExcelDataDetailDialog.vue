@@ -31,19 +31,27 @@
           {{ formatFileSize(taskData?.fileInfo?.fileSize || 0) }}
         </el-descriptions-item>
       </el-descriptions>
+      
+
     </div>
 
     <!-- Excel表格数据 -->
     <div class="excel-table-section">
       <h3>Excel表格数据</h3>
+      
+      <!-- 数据表格 -->
       <el-table 
         :data="tableData" 
         :loading="loading"
         border
         style="width: 100%"
         stripe
+        max-height="500"
       >
-        <el-table-column prop="rowNumber" label="行号" width="80" />
+        <template #empty>
+          <el-empty description="暂无数据" />
+        </template>
+        <el-table-column prop="rowNumber" label="行号" width="80" fixed="left" />
         <el-table-column 
           v-for="field in tableHeaders" 
           :key="field"
@@ -55,7 +63,7 @@
       </el-table>
       
       <!-- 分页 -->
-      <div class="pagination-wrapper">
+      <div v-if="pagination.total > 0" class="pagination-wrapper">
         <el-pagination
           v-model:current-page="pagination.current"
           v-model:page-size="pagination.pageSize"
@@ -79,7 +87,8 @@
 <script setup lang="ts">
 import { ref, reactive, computed, watch } from 'vue'
 import { ElMessage } from 'element-plus'
-import type { ExcelParseTask } from '@/typings/api'
+import { excelApi } from '@/services/api'
+import type { ExcelParseTask, ExcelDataDetailResponse, ExcelDataRecord } from '@/typings/api'
 
 // 定义组件属性
 interface Props {
@@ -116,6 +125,9 @@ const pagination = reactive({
   total: 0
 })
 
+// 跟踪上一页的最大行号
+const lastMaxRowLine = ref(0)
+
 // 任务数据
 const taskData = computed(() => props.task)
 
@@ -133,17 +145,74 @@ watch(() => visible.value, (newVisible) => {
   }
 })
 
+
+
 /**
  * 加载Excel数据
  */
 const loadExcelData = async () => {
-  if (!props.task?.taskId) return
+  if (!props.task?.id) return
+  
+  // 计算offset：上一页的最大行号 + 1
+  const offset = pagination.current === 1 ? 0 : lastMaxRowLine.value + 1
+  
+  console.log('加载数据 - 页码:', pagination.current, '页大小:', pagination.pageSize, 'offset:', offset)
   
   loading.value = true
+  
   try {
-    // 这里需要调用API获取Excel数据
-    // 暂时使用模拟数据
-    await simulateLoadData()
+    const response = await excelApi.getParseFileDetailPage(props.task.id, {
+      offset: offset,
+      size: pagination.pageSize
+    })
+    
+    console.log('API响应:', response)
+    
+    // 由于响应拦截器已经返回了data.data，所以response就是实际的数据
+    if (response) {
+      const data = response
+      pagination.total = data.total
+      
+      // 清空之前的数据
+      tableData.value = []
+      tableHeaders.value = []
+      
+      // 处理表头 - 确保所有记录都有相同的列结构
+      if (data.records.length > 0) {
+        // 获取所有记录的列名并去重
+        const allColumns = new Set<string>()
+        data.records.forEach(record => {
+          Object.keys(record.columnData).forEach(columnName => {
+            allColumns.add(columnName)
+          })
+        })
+        tableHeaders.value = Array.from(allColumns)
+      }
+      
+      // 处理表格数据
+      tableData.value = data.records.map(record => {
+        const rowData: any = {
+          rowNumber: record.rowLine
+        }
+        
+        // 将columnData转换为扁平化的行数据，确保所有列都有值
+        tableHeaders.value.forEach(columnName => {
+          rowData[columnName] = record.columnData[columnName]?.columnValue || ''
+        })
+        
+        return rowData
+      })
+      
+      // 更新上一页的最大行号
+      if (data.records.length > 0) {
+        const maxRowLine = Math.max(...data.records.map(record => record.rowLine))
+        lastMaxRowLine.value = maxRowLine
+        console.log('当前页最大行号:', maxRowLine)
+      }
+      
+      console.log('处理后的表格数据:', tableData.value)
+      console.log('表头:', tableHeaders.value)
+    }
   } catch (error) {
     console.error('加载Excel数据失败:', error)
     ElMessage.error('加载数据失败')
@@ -153,45 +222,17 @@ const loadExcelData = async () => {
 }
 
 /**
- * 模拟加载数据
- */
-const simulateLoadData = async () => {
-  // 模拟API调用延迟
-  await new Promise(resolve => setTimeout(resolve, 500))
-  
-  // 模拟数据
-  const mockHeaders = ['使用时间', '序号', '日期', '途径地点', '上车地点', '下车地点', '结束时间']
-  tableHeaders.value = mockHeaders
-  
-  const mockData = []
-  const startRow = (pagination.current - 1) * pagination.pageSize + 1
-  
-  for (let i = 0; i < pagination.pageSize; i++) {
-    const rowNumber = startRow + i
-    if (rowNumber > pagination.total) break
-    
-    mockData.push({
-      rowNumber,
-      '使用时间': `TEXT(B${rowNumber},"aaaa")`,
-      '序号': rowNumber,
-      '日期': `2024"年"${Math.floor(Math.random() * 12) + 1}"月"${Math.floor(Math.random() * 28) + 1}"日"`,
-      '途径地点': ['大宁商务中心', '虹桥机场', '浦江国际', '宝溢丰大厦'][Math.floor(Math.random() * 4)],
-      '上车地点': '宝溢丰大厦',
-      '下车地点': '宝溢丰大厦',
-      '结束时间': `${Math.floor(Math.random() * 24)}:${Math.floor(Math.random() * 60).toString().padStart(2, '0')}`
-    })
-  }
-  
-  tableData.value = mockData
-  pagination.total = 156 // 模拟总行数
-}
-
-/**
  * 处理页大小变化
  */
 const handleSizeChange = (size: number) => {
+  console.log('页大小变化:', size)
+  
+  // 重置分页状态
   pagination.pageSize = size
   pagination.current = 1
+  lastMaxRowLine.value = 0 // 重置最大行号
+  
+  // 重新加载数据
   loadExcelData()
 }
 
@@ -199,7 +240,17 @@ const handleSizeChange = (size: number) => {
  * 处理当前页变化
  */
 const handleCurrentChange = (page: number) => {
+  console.log('页码变化:', page)
+  
+  // 如果跳转到第一页，重置最大行号
+  if (page === 1) {
+    lastMaxRowLine.value = 0
+  }
+  
+  // 更新页码
   pagination.current = page
+  
+  // 重新加载数据
   loadExcelData()
 }
 
@@ -249,6 +300,8 @@ const formatFileSize = (bytes: number): string => {
 const handleClose = () => {
   visible.value = false
 }
+
+
 </script>
 
 <style scoped>
@@ -270,6 +323,17 @@ const handleClose = () => {
   font-size: 18px;
 }
 
+.empty-data,
+.loading-container {
+  text-align: center;
+  padding: 40px 0;
+}
+
+.loading-container p {
+  margin-top: 10px;
+  color: #909399;
+}
+
 .pagination-wrapper {
   margin-top: 20px;
   text-align: center;
@@ -282,5 +346,23 @@ const handleClose = () => {
 :deep(.el-dialog__body) {
   max-height: 70vh;
   overflow-y: auto;
+}
+
+:deep(.el-table) {
+  font-size: 14px;
+}
+
+:deep(.el-table th) {
+  background-color: #f5f7fa;
+  color: #606266;
+  font-weight: 600;
+}
+
+:deep(.el-table--striped .el-table__body tr.el-table__row--striped td) {
+  background-color: #fafafa;
+}
+
+:deep(.el-table__fixed-left) {
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
 }
 </style>

@@ -8,7 +8,7 @@ alwaysApply: true
 - 使用 JavaScript 和 TypeScript 混合开发
 - 使用element-ui风格的ui
 - 支持多环境配置本地和prod域名和配置不一样
-
+- 中文项目
 ## 目录结构规范
 - `pages/`: 页面文件目录
 - `components/`: 公共组件目录
@@ -164,3 +164,8 @@ alwaysApply: true
 
 ## 网络请求
 - 封装为了request.ts,并添加了额拦截器，code===0为正常，返回值自动取resoponse.data
+
+
+## 分页
+分页全局只支持10，20两种，然后中文文案
+请求参数 都为 page和size

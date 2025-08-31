@@ -72,6 +72,7 @@ export interface FileInfo {
 
 // Excel解析任务列表
 export interface ExcelParseTask {
+    id?: string
     taskId: string
     fileName: string
     status: 'pending' | 'processing' | 'completed' | 'failed'
@@ -91,7 +92,13 @@ export type TaskStatus = 'Enable' | 'Disable'
 // 分页参数
 export interface PageParams {
     page: number
-    pageSize: number
+    size: number
+}
+
+// Excel数据详情分页参数
+export interface ExcelDataPageParams {
+    offset: number
+    size: number
 }
 
 // 分页响应
@@ -99,7 +106,7 @@ export interface PageResponse<T> {
     records: T[]
     total: number
     page: number
-    pageSize: number
+    size: number
     totalPages: number
 }
 
@@ -129,6 +136,27 @@ export interface UpdateTaskRequest {
     startTime: string | null
     endTime: string | null
     extendData: ExcelParseExtendData
+}
+
+// Excel数据详情响应 - 新增
+export interface ExcelDataDetailResponse {
+    maxRowLine: number
+    total: number
+    records: ExcelDataRecord[]
+    minRowLine: number
+}
+
+// Excel数据记录 - 新增
+export interface ExcelDataRecord {
+    rowLine: number
+    columnData: Record<string, ExcelColumnData>
+}
+
+// Excel列数据 - 新增
+export interface ExcelColumnData {
+    id: number
+    columnName: string
+    columnValue: string
 }
 
 // 任务设置字段选项

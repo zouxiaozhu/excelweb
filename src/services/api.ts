@@ -10,9 +10,11 @@ import type {
     ExcelParseResponse,
     ExcelParseTask,
     PageParams,
+    ExcelDataPageParams,
     PageResponse,
     UpdateTaskRequest,
-    ApiResponse
+    ApiResponse,
+    ExcelDataDetailResponse
 } from '@/typings/api'
 
 /**
@@ -113,6 +115,21 @@ export const excelApi = {
     getExcelData(taskId: string, params: PageParams): Promise<ApiResponse> {
         return http.get(`/excel/getExcelData?taskId=${taskId}`, {
             params
+        })
+    },
+
+    /**
+     * 获取解析文件详情页面数据
+     * @param taskId 任务ID
+     * @param params 分页参数
+     * @returns Excel数据详情响应
+     */
+    getParseFileDetailPage(taskId: string, params: ExcelDataPageParams): Promise<ExcelDataDetailResponse> {
+        return http.get(`/excel/getParseFileDetailPage`, {
+            params: {
+                taskId,
+                ...params
+            }
         })
     }
 }
