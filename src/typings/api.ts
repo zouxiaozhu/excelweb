@@ -4,6 +4,7 @@
 
 // 通用响应结构
 export interface ApiResponse<T = any> {
+    [x: string]: any
     userInfo: any
     tokenInfo: any
     code: number

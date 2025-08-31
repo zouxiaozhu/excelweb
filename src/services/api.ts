@@ -131,6 +131,24 @@ export const excelApi = {
                 ...params
             }
         })
+    },
+
+    /**
+     * 搜索Excel数据
+     * @param params 搜索参数
+     * @returns 搜索结果
+     */
+    searchExcelData(params: any): Promise<ApiResponse<any[]>> {
+        return http.post('/excel/searchRows', params)
+    },
+
+    /**
+     * 获取Excel文件元数据
+     * @param fileCoding 文件编码
+     * @returns 文件元数据
+     */
+    getExcelMeta(fileCoding: string): Promise<ApiResponse<any>> {
+        return http.get(`/excel/meta?fileCoding=${fileCoding}`)
     }
 }
 

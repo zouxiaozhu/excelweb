@@ -23,7 +23,7 @@
               <!-- 左侧：头像管理 -->
               <div class="avatar-section">
                 <div class="avatar-container">
-                  <el-avatar :size="120" :src="userInfo.avatar">
+                  <el-avatar :size="120" :src="avatarUrl">
                     <el-icon><User /></el-icon>
                   </el-avatar>
                 </div>
@@ -82,11 +82,22 @@
                     />
                   </el-form-item>
 
-                  <el-form-item label="手机号" prop="mobile">
+                  <el-form-item label="手机号" prop="phone">
                     <el-input
-                      v-model="profileForm.mobile"
+                      v-model="profileForm.phone"
                       placeholder="请输入手机号"
                       maxlength="11"
+                    />
+                  </el-form-item>
+
+                  <el-form-item label="个人简介" prop="bio">
+                    <el-input
+                      v-model="profileForm.bio"
+                      type="textarea"
+                      :rows="3"
+                      placeholder="请输入个人简介"
+                      maxlength="200"
+                      show-word-limit
                     />
                   </el-form-item>
 
@@ -125,6 +136,7 @@ import { ArrowLeft, Refresh, User } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useGlobalStore } from '../store'
 import { authApiService } from '../services/authApi'
+import { fileApi } from '../services/api'
 
 const router = useRouter()
 const globalStore = useGlobalStore()
@@ -139,12 +151,71 @@ const profileFormRef = ref()
 // 计算属性
 const userInfo = computed(() => globalStore.userInfo || {})
 
+// 文件访问URL格式配置
+// 根据你的后端API，选择合适的URL格式
+const FILE_ACCESS_URL_FORMAT = '/file/access/{fileId}' // 可以修改为其他格式
+
+// 头像URL计算属性
+const avatarUrl = computed(() => {
+  const avatar = profileForm.avatar || userInfo.value.avatar
+  console.log('Avatar debug:', {
+    profileFormAvatar: profileForm.avatar,
+    userInfoAvatar: userInfo.value.avatar,
+    finalAvatar: avatar
+  })
+  
+  if (!avatar) return ''
+  
+  // 如果avatar是完整的URL，直接返回
+  if (avatar.startsWith('http://') || avatar.startsWith('https://')) {
+    console.log('Using full URL:', avatar)
+    return avatar
+  }
+  
+  // 如果avatar是fileId，构造文件访问URL
+  if (avatar) {
+    const url = FILE_ACCESS_URL_FORMAT.replace('{fileId}', avatar)
+    console.log('Constructed avatar URL:', url)
+    return url
+  }
+  
+  return ''
+})
+
+// 测试头像URL是否可访问
+const testAvatarUrl = async (fileId: string) => {
+  const possibleUrls = [
+    '/file/access/{fileId}',
+    '/file/download/{fileId}',
+    '/api/file/{fileId}',
+    '/file/{fileId}',
+    '/api/file/access/{fileId}'
+  ].map(format => format.replace('{fileId}', fileId))
+  
+  for (const url of possibleUrls) {
+    try {
+      const response = await fetch(url, { method: 'HEAD' })
+      if (response.ok) {
+        console.log('Found working avatar URL:', url)
+        return url
+      }
+    } catch (error) {
+      console.log('URL not working:', url, error)
+    }
+  }
+  
+  console.log('No working URL found for fileId:', fileId)
+  return possibleUrls[0] // 返回第一个作为默认值
+}
+
 // 表单数据
 const profileForm = reactive({
   username: '',
   nickName: '',
   email: '',
-  mobile: ''
+  phone: '',
+  bio: '',
+  avatar: ''
 })
 
 // 表单验证规则
@@ -157,8 +228,11 @@ const profileRules = {
     { required: true, message: '请输入邮箱', trigger: 'blur' },
     { type: 'email', message: '请输入正确的邮箱格式', trigger: 'blur' }
   ],
-  mobile: [
+  phone: [
     { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号格式', trigger: 'blur' }
+  ],
+  bio: [
+    { max: 200, message: '个人简介不能超过200字', trigger: 'blur' }
   ]
 }
 
@@ -174,10 +248,12 @@ const goBack = () => {
  */
 const initFormData = () => {
   if (userInfo.value) {
-    profileForm.username = userInfo.value.username || ''
+    profileForm.username = userInfo.value.username || userInfo.value.userName || ''
     profileForm.nickName = userInfo.value.nickName || ''
     profileForm.email = userInfo.value.email || ''
-    profileForm.mobile = userInfo.value.mobile || ''
+    profileForm.phone = userInfo.value.phone || userInfo.value.mobile || ''
+    profileForm.bio = userInfo.value.bio || ''
+    profileForm.avatar = userInfo.value.avatar || ''
   }
 }
 
@@ -210,13 +286,25 @@ const handleAvatarUpload = async (event: Event) => {
   }
   
   try {
-    // 这里应该调用头像上传API
-    // const response = await uploadAvatar(file)
-    // globalStore.updateUserAvatar(response.data.avatarUrl)
+    // 调用文件上传API，使用USER_AVATAR作为businessType
+    const response = await fileApi.upload(file, 'USER_AVATAR')
     
-    ElMessage.success('头像上传成功')
+    if (response && response.fileId) {
+      console.log('Avatar upload response:', response)
+      
+      // 更新表单中的头像字段
+      profileForm.avatar = response.externalUrl
+      console.log('Updated profileForm.avatar:', profileForm.avatar)
+      
+      // 更新全局状态中的头像
+      globalStore.updateUserAvatar(response.externalUrl)
+      ElMessage.success('头像上传成功，请点击"保存修改"保存到服务器')
+    } else {
+      ElMessage.error('头像上传失败：未获取到文件ID')
+    }
   } catch (error) {
-    ElMessage.error('头像上传失败')
+    console.error('头像上传失败:', error)
+    ElMessage.error('头像上传失败：' + (error.message || '未知错误'))
   }
   
   // 清空文件输入
@@ -229,34 +317,28 @@ const handleAvatarUpload = async (event: Event) => {
 const handleSave = async () => {
   if (!profileFormRef.value) return
   
-  try {
     await profileFormRef.value.validate()
-    saving.value = true
     
     // 调用更新用户信息API
     const response = await authApiService.updateUserProfile({
+      username: profileForm.username,
       nickName: profileForm.nickName,
       email: profileForm.email,
-      mobile: profileForm.mobile
+      phone: profileForm.phone,
+      bio: profileForm.bio,
+      avatar: profileForm.avatar
     })
     
-    if (response.code === 200) {
       ElMessage.success('保存成功')
       // 更新全局状态
       globalStore.updateUserInfo({
         nickName: profileForm.nickName,
         email: profileForm.email,
-        mobile: profileForm.mobile
+        phone: profileForm.phone,
+        bio: profileForm.bio,
+        avatar: profileForm.avatar
       })
-    } else {
-      ElMessage.error(response.message || '保存失败')
-    }
-  } catch (error) {
-    console.error('保存失败:', error)
-    ElMessage.error('保存失败')
-  } finally {
-    saving.value = false
-  }
+  
 }
 
 /**
@@ -353,6 +435,16 @@ onMounted(() => {
 
 .avatar-container {
   margin-bottom: 20px;
+}
+
+.avatar-debug {
+  margin-top: 10px;
+  padding: 8px;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #666;
+  border: 1px solid #e9ecef;
 }
 
 .avatar-btn {

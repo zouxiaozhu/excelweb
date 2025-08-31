@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>用户资料更新测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        input,
+        textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        textarea {
+            height: 100px;
+            resize: vertical;
+        }
+
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 4px;
+        }
+
+        .success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+
+        .error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>用户资料更新测试</h1>
+    <p>测试 /system/user/update 接口</p>
+
+    <form id="updateForm">
+        <div class="form-group">
+            <label for="username">用户名:</label>
+            <input type="text" id="username" name="username" value="testuser" required>
+        </div>
+
+        <div class="form-group">
+            <label for="nickName">昵称:</label>
+            <input type="text" id="nickName" name="nickName" value="测试用户" required>
+        </div>
+
+        <div class="form-group">
+            <label for="email">邮箱:</label>
+            <input type="email" id="email" name="email" value="test@example.com" required>
+        </div>
+
+        <div class="form-group">
+            <label for="phone">手机号:</label>
+            <input type="tel" id="phone" name="phone" value="13800138000">
+        </div>
+
+        <div class="form-group">
+            <label for="bio">个人简介:</label>
+            <textarea id="bio" name="bio" placeholder="请输入个人简介">这是一个测试用户的个人简介</textarea>
+        </div>
+
+        <div class="form-group">
+            <label for="avatar">头像URL:</label>
+            <input type="url" id="avatar" name="avatar" value="https://example.com/avatar.jpg">
+        </div>
+
+        <button type="submit">更新用户资料</button>
+    </form>
+
+    <div id="result"></div>
+
+    <script>
+        document.getElementById('updateForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            const formData = new FormData(this);
+            const data = {
+                username: formData.get('username'),
+                nickName: formData.get('nickName'),
+                email: formData.get('email'),
+                phone: formData.get('phone'),
+                bio: formData.get('bio'),
+                avatar: formData.get('avatar')
+            };
+
+            const resultDiv = document.getElementById('result');
+
+            try {
+                // 这里需要根据你的实际API地址进行调整
+                const response = await fetch('/system/user/update', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        // 如果需要认证token，在这里添加
+                        // 'Authorization': 'Bearer ' + localStorage.getItem('token')
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `
+                        <h3>更新成功！</h3>
+                        <pre>${JSON.stringify(result, null, 2)}</pre>
+                    `;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `
+                        <h3>更新失败</h3>
+                        <p>状态码: ${response.status}</p>
+                        <pre>${JSON.stringify(result, null, 2)}</pre>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `
+                    <h3>请求错误</h3>
+                    <p>${error.message}</p>
+                `;
+            }
+        });
+    </script>
+</body>
+
+</html>

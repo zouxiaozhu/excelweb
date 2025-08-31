@@ -21,9 +21,12 @@ export interface RegisterRequest {
 }
 
 export interface UpdateUserProfileRequest {
-    nickName?: string
-    email?: string
-    mobile?: string
+    username: string
+    nickName: string
+    email: string
+    phone: string
+    bio: string
+    avatar: string
 }
 
 export interface UserInfoDto {
@@ -32,6 +35,8 @@ export interface UserInfoDto {
     nickName: string
     email: string
     mobile: string
+    phone: string
+    bio: string
     loginTime: string
     avatar: string
 }

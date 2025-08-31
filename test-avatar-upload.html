@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>头像上传测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .upload-section {
+            border: 2px dashed #ddd;
+            padding: 30px;
+            text-align: center;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .upload-section.dragover {
+            border-color: #007bff;
+            background-color: #f8f9fa;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .upload-btn {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-bottom: 10px;
+        }
+
+        .upload-btn:hover {
+            background-color: #0056b3;
+        }
+
+        .preview {
+            margin-top: 20px;
+        }
+
+        .preview img {
+            max-width: 200px;
+            max-height: 200px;
+            border-radius: 50%;
+            border: 2px solid #ddd;
+        }
+
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 4px;
+        }
+
+        .success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+
+        .error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+
+        .info {
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>头像上传测试</h1>
+    <p>测试头像上传功能，使用 <code>/file/upload</code> 接口，businessType: <code>USER_AVATAR</code></p>
+
+    <div class="upload-section" id="uploadSection">
+        <input type="file" id="fileInput" class="file-input" accept="image/jpeg,image/png">
+        <button class="upload-btn" onclick="document.getElementById('fileInput').click()">
+            选择头像文件
+        </button>
+        <p>支持 JPG、PNG 格式，文件大小不超过 2MB</p>
+        <p>或者直接拖拽文件到此处</p>
+    </div>
+
+    <div class="preview" id="preview" style="display: none;">
+        <h3>预览</h3>
+        <img id="previewImg" src="" alt="头像预览">
+    </div>
+
+    <div id="result"></div>
+
+    <script>
+        const fileInput = document.getElementById('fileInput');
+        const uploadSection = document.getElementById('uploadSection');
+        const preview = document.getElementById('preview');
+        const previewImg = document.getElementById('previewImg');
+        const resultDiv = document.getElementById('result');
+
+        // 文件选择处理
+        fileInput.addEventListener('change', handleFileSelect);
+
+        // 拖拽处理
+        uploadSection.addEventListener('dragover', handleDragOver);
+        uploadSection.addEventListener('dragleave', handleDragLeave);
+        uploadSection.addEventListener('drop', handleDrop);
+
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (file) {
+                processFile(file);
+            }
+        }
+
+        function handleDragOver(event) {
+            event.preventDefault();
+            uploadSection.classList.add('dragover');
+        }
+
+        function handleDragLeave(event) {
+            event.preventDefault();
+            uploadSection.classList.remove('dragover');
+        }
+
+        function handleDrop(event) {
+            event.preventDefault();
+            uploadSection.classList.remove('dragover');
+
+            const files = event.dataTransfer.files;
+            if (files.length > 0) {
+                processFile(files[0]);
+            }
+        }
+
+        function processFile(file) {
+            // 验证文件类型
+            if (!['image/jpeg', 'image/png'].includes(file.type)) {
+                showResult('error', '只支持 JPG、PNG 格式的图片');
+                return;
+            }
+
+            // 验证文件大小 (2MB)
+            if (file.size > 2 * 1024 * 1024) {
+                showResult('error', '文件大小不能超过 2MB');
+                return;
+            }
+
+            // 显示预览
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                previewImg.src = e.target.result;
+                preview.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+
+            // 上传文件
+            uploadFile(file);
+        }
+
+        async function uploadFile(file) {
+            showResult('info', '正在上传头像...');
+
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('businessType', 'USER_AVATAR');
+
+                // 这里需要根据你的实际API地址进行调整
+                const response = await fetch('/file/upload', {
+                    method: 'POST',
+                    headers: {
+                        // 如果需要认证token，在这里添加
+                        // 'Authorization': 'Bearer ' + localStorage.getItem('token')
+                    },
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.fileId) {
+                    showResult('success', `
+                        <h3>头像上传成功！</h3>
+                        <p><strong>文件ID:</strong> ${result.fileId}</p>
+                        <p><strong>文件名:</strong> ${result.fileName}</p>
+                        <p><strong>文件大小:</strong> ${result.sizeText || result.fileSize + ' bytes'}</p>
+                        <p><strong>上传时间:</strong> ${result.uploadTime}</p>
+                        <p><strong>访问URL:</strong> /file/access/${result.fileId}</p>
+                    `);
+                } else {
+                    showResult('error', `
+                        <h3>上传失败</h3>
+                        <p>状态码: ${response.status}</p>
+                        <pre>${JSON.stringify(result, null, 2)}</pre>
+                    `);
+                }
+            } catch (error) {
+                showResult('error', `
+                    <h3>请求错误</h3>
+                    <p>${error.message}</p>
+                `);
+            }
+        }
+
+        function showResult(type, message) {
+            resultDiv.className = `result ${type}`;
+            resultDiv.innerHTML = message;
+        }
+    </script>
+</body>
+
+</html>

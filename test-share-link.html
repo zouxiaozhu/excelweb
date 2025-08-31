@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>分享链接测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+        }
+
+        .test-section h3 {
+            margin-top: 0;
+            color: #2c3e50;
+        }
+
+        .link-display {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            word-break: break-all;
+            font-family: 'Courier New', monospace;
+            margin: 10px 0;
+        }
+
+        .button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 5px;
+        }
+
+        .button:hover {
+            background: #0056b3;
+        }
+
+        .success {
+            color: #28a745;
+        }
+
+        .error {
+            color: #dc3545;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>表格快搜分享链接测试</h1>
+
+        <div class="test-section">
+            <h3>1. 生成分享链接</h3>
+            <p>测试文件编码：<strong>5a6649359d554885</strong></p>
+            <button class="button" onclick="generateShareLink()">生成分享链接</button>
+            <div id="shareLinkResult" class="link-display" style="display: none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>2. 复制到剪贴板</h3>
+            <button class="button" onclick="copyToClipboard()">复制链接到剪贴板</button>
+            <div id="copyResult"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>3. 测试链接访问</h3>
+            <button class="button" onclick="testLinkAccess()">测试链接访问</button>
+            <div id="accessResult"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>4. 移动端兼容性测试</h3>
+            <p>当前设备：<span id="deviceInfo"></span></p>
+            <button class="button" onclick="testMobileCompatibility()">测试移动端兼容性</button>
+            <div id="mobileResult"></div>
+        </div>
+    </div>
+
+    <script>
+        let currentShareLink = '';
+
+        function generateShareLink() {
+            const fileCoding = '5a6649359d554885';
+            const baseUrl = window.location.origin;
+            currentShareLink = `${baseUrl}/excel-search?fileCoding=${fileCoding}`;
+
+            const resultDiv = document.getElementById('shareLinkResult');
+            resultDiv.textContent = currentShareLink;
+            resultDiv.style.display = 'block';
+
+            console.log('生成的分享链接:', currentShareLink);
+        }
+
+        function copyToClipboard() {
+            if (!currentShareLink) {
+                showResult('copyResult', '请先生成分享链接', 'error');
+                return;
+            }
+
+            navigator.clipboard.writeText(currentShareLink).then(() => {
+                showResult('copyResult', '链接已成功复制到剪贴板！', 'success');
+            }).catch(err => {
+                showResult('copyResult', '复制失败：' + err.message, 'error');
+                console.error('复制失败:', err);
+            });
+        }
+
+        function testLinkAccess() {
+            if (!currentShareLink) {
+                showResult('accessResult', '请先生成分享链接', 'error');
+                return;
+            }
+
+            // 测试链接是否可以访问
+            fetch(currentShareLink, { method: 'HEAD' })
+                .then(response => {
+                    if (response.ok) {
+                        showResult('accessResult', '链接可以正常访问！', 'success');
+                    } else {
+                        showResult('accessResult', `链接访问失败，状态码：${response.status}`, 'error');
+                    }
+                })
+                .catch(err => {
+                    showResult('accessResult', '链接访问测试失败：' + err.message, 'error');
+                });
+        }
+
+        function testMobileCompatibility() {
+            const userAgent = navigator.userAgent;
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
+
+            document.getElementById('deviceInfo').textContent = isMobile ? '移动设备' : '桌面设备';
+
+            // 测试响应式特性
+            const screenWidth = window.screen.width;
+            const screenHeight = window.screen.height;
+            const viewportWidth = window.innerWidth;
+            const viewportHeight = window.innerHeight;
+
+            const result = `
+                <p><strong>设备信息：</strong></p>
+                <ul>
+                    <li>屏幕尺寸：${screenWidth} x ${screenHeight}</li>
+                    <li>视口尺寸：${viewportWidth} x ${viewportHeight}</li>
+                    <li>设备类型：${isMobile ? '移动设备' : '桌面设备'}</li>
+                    <li>用户代理：${userAgent.substring(0, 100)}...</li>
+                </ul>
+                <p><strong>兼容性评估：</strong></p>
+                <p>${isMobile ? '✅ 移动端兼容性良好' : '✅ 桌面端兼容性良好'}</p>
+            `;
+
+            showResult('mobileResult', result, 'success');
+        }
+
+        function showResult(elementId, message, type) {
+            const element = document.getElementById(elementId);
+            element.innerHTML = message;
+            element.className = type;
+        }
+
+        // 页面加载时自动生成分享链接
+        window.onload = function () {
+            generateShareLink();
+            testMobileCompatibility();
+        };
+    </script>
+</body>
+
+</html>

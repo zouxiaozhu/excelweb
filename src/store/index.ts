@@ -12,6 +12,8 @@ interface UserInfo {
     email: string
     nickName?: string
     mobile?: string
+    phone?: string
+    bio?: string
     avatar?: string
 }
 
@@ -117,6 +119,8 @@ export const useGlobalStore = defineStore('global', {
                     email: data.userInfo.email,
                     nickName: data.userInfo.nickName,
                     mobile: data.userInfo.mobile,
+                    phone: data.userInfo.phone,
+                    bio: data.userInfo.bio,
                     isExperienceAccount: true,
                     avatar: data.userInfo.avatar
                 }
@@ -146,6 +150,8 @@ export const useGlobalStore = defineStore('global', {
                         email: response.data.userInfo.email,
                         nickName: response.data.userInfo.nickName,
                         mobile: response.data.userInfo.mobile,
+                        phone: response.data.userInfo.phone,
+                        bio: response.data.userInfo.bio,
                         isExperienceAccount: false,
                         avatar: response.data.userInfo.avatar
                     }
@@ -193,9 +199,16 @@ export const useGlobalStore = defineStore('global', {
         },
 
         /**
- * 初始化用户状态（从本地存储恢复）
- */
+         * 初始化用户状态（从本地存储恢复）
+         */
         async initUserState() {
+            // 检查当前路由，如果是表格快搜页面则跳过用户状态检查
+            const currentRoute = window.location.pathname
+            if (currentRoute === '/excel-search') {
+                console.log('表格快搜页面，跳过用户状态检查')
+                return
+            }
+
             const token = localStorage.getItem('token')
             if (token) {
                 // 验证token并获取用户信息
@@ -207,6 +220,8 @@ export const useGlobalStore = defineStore('global', {
                     email: data.userInfo.email,
                     nickName: data.userInfo.nickName,
                     mobile: data.userInfo.mobile,
+                    phone: data.userInfo.phone,
+                    bio: data.userInfo.bio,
                     avatar: data.userInfo.avatar,
                 }
 

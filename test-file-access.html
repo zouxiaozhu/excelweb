@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文件访问URL测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+
+        .file-id-input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        .test-btn {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+
+        .test-btn:hover {
+            background-color: #0056b3;
+        }
+
+        .result {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+
+        .success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+
+        .error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+
+        .info {
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+
+        .url-list {
+            margin-top: 15px;
+        }
+
+        .url-item {
+            padding: 8px;
+            margin-bottom: 5px;
+            border-radius: 4px;
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+        }
+
+        .url-item.working {
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+        }
+
+        .url-item.not-working {
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>文件访问URL测试</h1>
+    <p>测试不同的文件访问URL格式，找出可用的URL</p>
+
+    <div class="test-section">
+        <h3>输入文件ID进行测试</h3>
+        <input type="text" id="fileIdInput" class="file-id-input" placeholder="请输入文件ID" value="">
+        <button class="test-btn" onclick="testFileAccess()">测试文件访问</button>
+        <button class="test-btn" onclick="testAllUrls()">测试所有URL格式</button>
+    </div>
+
+    <div class="test-section">
+        <h3>常见URL格式</h3>
+        <div class="url-list" id="urlList">
+            <div class="url-item">
+                <strong>/file/access/{fileId}</strong> - 文件访问
+            </div>
+            <div class="url-item">
+                <strong>/file/download/{fileId}</strong> - 文件下载
+            </div>
+            <div class="url-item">
+                <strong>/api/file/{fileId}</strong> - API文件访问
+            </div>
+            <div class="url-item">
+                <strong>/file/{fileId}</strong> - 直接文件访问
+            </div>
+            <div class="url-item">
+                <strong>/api/file/access/{fileId}</strong> - API文件访问
+            </div>
+        </div>
+    </div>
+
+    <div id="result"></div>
+
+    <script>
+        const fileIdInput = document.getElementById('fileIdInput');
+        const resultDiv = document.getElementById('result');
+        const urlList = document.getElementById('urlList');
+
+        // 常见的文件访问URL格式
+        const urlFormats = [
+            '/file/access/{fileId}',
+            '/file/download/{fileId}',
+            '/api/file/{fileId}',
+            '/file/{fileId}',
+            '/api/file/access/{fileId}'
+        ];
+
+        async function testFileAccess() {
+            const fileId = fileIdInput.value.trim();
+            if (!fileId) {
+                showResult('error', '请输入文件ID');
+                return;
+            }
+
+            showResult('info', '正在测试文件访问...');
+
+            const results = [];
+            for (const format of urlFormats) {
+                const url = format.replace('{fileId}', fileId);
+                const result = await testUrl(url);
+                results.push({ url, working: result });
+            }
+
+            displayResults(results);
+        }
+
+        async function testAllUrls() {
+            showResult('info', '正在测试所有URL格式...');
+
+            // 使用一个示例文件ID进行测试
+            const testFileId = 'test123';
+            const results = [];
+
+            for (const format of urlFormats) {
+                const url = format.replace('{fileId}', testFileId);
+                const result = await testUrl(url);
+                results.push({ url, working: result });
+            }
+
+            displayResults(results);
+        }
+
+        async function testUrl(url) {
+            try {
+                const response = await fetch(url, {
+                    method: 'HEAD',
+                    mode: 'no-cors' // 避免CORS问题
+                });
+                return true;
+            } catch (error) {
+                return false;
+            }
+        }
+
+        function displayResults(results) {
+            let html = '<h3>测试结果</h3>';
+
+            results.forEach(result => {
+                const statusClass = result.working ? 'working' : 'not-working';
+                const statusText = result.working ? '✓ 可用' : '✗ 不可用';
+
+                html += `
+                    <div class="url-item ${statusClass}">
+                        <strong>${result.url}</strong> - ${statusText}
+                    </div>
+                `;
+            });
+
+            showResult('info', html);
+        }
+
+        function showResult(type, message) {
+            resultDiv.className = `result ${type}`;
+            resultDiv.innerHTML = message;
+        }
+
+        // 页面加载时自动测试
+        window.addEventListener('load', () => {
+            // 从URL参数中获取文件ID
+            const urlParams = new URLSearchParams(window.location.search);
+            const fileId = urlParams.get('fileId');
+            if (fileId) {
+                fileIdInput.value = fileId;
+                testFileAccess();
+            }
+        });
+    </script>
+</body>
+
+</html>

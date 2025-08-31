@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>导航栏隐藏测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+        }
+        .test-section h3 {
+            margin-top: 0;
+            color: #2c3e50;
+        }
+        .button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .button:hover {
+            background: #0056b3;
+        }
+        .success {
+            color: #28a745;
+        }
+        .info {
+            color: #17a2b8;
+        }
+        .warning {
+            color: #ffc107;
+        }
+        .link-display {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            word-break: break-all;
+            font-family: 'Courier New', monospace;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>表格快搜导航栏隐藏测试</h1>
+        
+        <div class="test-section">
+            <h3>测试说明</h3>
+            <p>这个测试用于验证表格快搜页面是否正确隐藏了导航栏和底部。</p>
+            <ul>
+                <li>✅ 表格快搜页面应该不显示顶部导航栏</li>
+                <li>✅ 表格快搜页面应该不显示底部</li>
+                <li>✅ 其他页面应该正常显示导航栏和底部</li>
+            </ul>
+        </div>
+        
+        <div class="test-section">
+            <h3>1. 测试表格快搜页面</h3>
+            <p>点击下面的按钮打开表格快搜页面，检查是否隐藏了导航栏：</p>
+            <button class="button" onclick="openExcelSearch()">打开表格快搜页面</button>
+            <div class="link-display" id="excelSearchLink"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>2. 对比其他页面</h3>
+            <p>点击下面的按钮打开其他页面，对比导航栏的显示：</p>
+            <button class="button" onclick="openHomePage()">打开首页</button>
+            <button class="button" onclick="openExcelQuery()">打开表格快查</button>
+            <button class="button" onclick="openExcelToWord()">打开Excel转Word</button>
+        </div>
+        
+        <div class="test-section">
+            <h3>3. 测试结果</h3>
+            <div id="testResults">
+                <p class="info">请打开上述链接进行测试，然后记录结果：</p>
+                <ul>
+                    <li>表格快搜页面导航栏：<span id="searchNavResult">待测试</span></li>
+                    <li>表格快搜页面底部：<span id="searchFooterResult">待测试</span></li>
+                    <li>其他页面导航栏：<span id="otherNavResult">待测试</span></li>
+                    <li>其他页面底部：<span id="otherFooterResult">待测试</span></li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h3>4. 移动端测试</h3>
+            <p>在移动设备上测试以下功能：</p>
+            <ul>
+                <li>✅ 导航栏在表格快搜页面完全隐藏</li>
+                <li>✅ 搜索界面在移动端正常显示</li>
+                <li>✅ 触摸操作友好</li>
+                <li>✅ 响应式布局正常</li>
+            </ul>
+            <button class="button" onclick="testMobileFeatures()">测试移动端特性</button>
+            <div id="mobileTestResult"></div>
+        </div>
+    </div>
+
+    <script>
+        function openExcelSearch() {
+            const baseUrl = window.location.origin;
+            const link = `${baseUrl}/excel-search?fileCoding=5a6649359d554885`;
+            document.getElementById('excelSearchLink').textContent = link;
+            window.open(link, '_blank');
+        }
+        
+        function openHomePage() {
+            const baseUrl = window.location.origin;
+            window.open(`${baseUrl}/`, '_blank');
+        }
+        
+        function openExcelQuery() {
+            const baseUrl = window.location.origin;
+            window.open(`${baseUrl}/excel-query`, '_blank');
+        }
+        
+        function openExcelToWord() {
+            const baseUrl = window.location.origin;
+            window.open(`${baseUrl}/excel-to-word`, '_blank');
+        }
+        
+        function testMobileFeatures() {
+            const userAgent = navigator.userAgent;
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
+            
+            const result = `
+                <div class="info">
+                    <p><strong>设备检测结果：</strong></p>
+                    <p>当前设备：${isMobile ? '移动设备' : '桌面设备'}</p>
+                    <p>屏幕尺寸：${window.screen.width} x ${window.screen.height}</p>
+                    <p>视口尺寸：${window.innerWidth} x ${window.innerHeight}</p>
+                </div>
+                <div class="success">
+                    <p><strong>测试建议：</strong></p>
+                    <ul>
+                        <li>在移动设备上打开表格快搜页面</li>
+                        <li>确认导航栏完全隐藏</li>
+                        <li>测试搜索功能的触摸操作</li>
+                        <li>检查响应式布局效果</li>
+                    </ul>
+                </div>
+            `;
+            
+            document.getElementById('mobileTestResult').innerHTML = result;
+        }
+        
+        // 页面加载时自动生成链接
+        window.onload = function() {
+            openExcelSearch();
+        };
+    </script>
+</body>
+</html>

@@ -26,9 +26,21 @@
         <!-- 操作步骤 -->
         <div class="steps-container">
           <el-steps :active="currentStep" finish-status="success">
-            <el-step title="上传Excel" description="选择并上传Excel文件" />
-            <el-step title="解析数据" description="解析Excel文件内容" />
-            <el-step title="查看详情" description="预览和管理数据" />
+            <el-step 
+              title="上传Excel" 
+              description="选择并上传Excel文件"
+              :status="currentStep >= 0 ? 'finish' : 'wait'"
+            />
+            <el-step 
+              title="解析数据" 
+              description="解析Excel文件内容"
+              :status="parseResult ? 'finish' : (currentStep >= 1 ? 'process' : 'wait')"
+            />
+            <el-step 
+              title="查看详情" 
+              description="预览和管理数据"
+              :status="currentStep === 2 ? 'finish' : (parseResult ? 'finish' : 'wait')"
+            />
           </el-steps>
         </div>
 
@@ -75,8 +87,38 @@
                   </el-descriptions-item>
                 </el-descriptions>
               </div>
+              
+              <!-- 解析状态显示 -->
+              <div v-if="parsing" class="parse-status">
+                <el-alert
+                  title="正在解析中..."
+                  type="info"
+                  :closable="false"
+                  show-icon
+                >
+                  <template #default>
+                    <p>文件正在解析中，请稍候...</p>
+                  </template>
+                </el-alert>
+              </div>
+              
+              <div v-else-if="parseResult" class="parse-status">
+                <el-alert
+                  title=""
+                  type="success"
+                  :closable="false"
+                  show-icon
+                >
+                  <template #default>
+                    <p>文件解析已完成，可以查看解析结果或重新上传文件进行新的解析。</p>
+                  </template>
+                </el-alert>
+              </div>
+              
               <div class="parse-actions">
+                <!-- 只有在未解析完成且当前文件未被解析过时才显示解析按钮 -->
                 <el-button 
+                  v-if="!parseResult && !hasParsedCurrentFile"
                   type="primary" 
                   size="large"
                   :loading="parsing"
@@ -84,14 +126,15 @@
                 >
                   {{ parsing ? '解析中...' : '开始解析' }}
                 </el-button>
+                
+                <!-- 重新上传按钮始终显示 -->
                 <el-button 
                   type="default" 
                   size="large"
                   @click="handleReupload"
                   style="margin-left: 10px;"
-                  :class="{ 'hidden': !showReuploadButton || !currentFileInfo }"
                 >
-                  重新上传
+                  重新上传文件
                 </el-button>
               </div>
             </div>
@@ -104,12 +147,15 @@
             <template #header>
               <div class="card-header">
                 <span>第三步：查看解析结果</span>
-                <el-button type="success" @click="viewDetail">查看详情</el-button>
+                <div class="header-actions">
+                  <el-button type="primary" @click="createNewParse">创建新的解析</el-button>
+                  <el-button type="success" @click="viewDetail">查看详情</el-button>
+                </div>
               </div>
             </template>
             <div v-if="parseResult" class="parse-result">
               <el-alert
-                :title="`解析完成！共解析出 ${parseResult.data?.totalRows || 0} 行数据，${parseResult.data?.sheets?.length || 0} 个工作表`"
+                :title="`解析完成`"
                 type="success"
                 :closable="false"
                 show-icon
@@ -247,6 +293,13 @@
                     设置
                   </el-button>
                   <el-button 
+                    type="info" 
+                    size="small"
+                    @click="shareTask(row)"
+                  >
+                    分享
+                  </el-button>
+                  <el-button 
                     type="danger" 
                     size="small"
                     @click="deleteTask(row)"
@@ -354,7 +407,7 @@ const currentStep = ref(0)
 const parsing = ref(false)
 const loadingTasks = ref(false)
 const activeSheet = ref('0')
-const showReuploadButton = ref(true)
+const hasParsedCurrentFile = ref(false)
 
 const currentFileInfo = ref<FileUploadResponse | null>(null)
 const parseResult = ref<ExcelParseResponse | null>(null)
@@ -380,13 +433,17 @@ const goBack = () => {
  */
 const handleUploadSuccess = ({ response }: { response: FileUploadResponse }) => {
   currentFileInfo.value = response
+  // 重置解析状态，因为这是新文件
+  parseResult.value = null
+  hasParsedCurrentFile.value = false
+  parsing.value = false
+  
   globalStore.setCurrentFile({
     fileId: response.fileId,
     fileName: response.fileName,
     fileSize: response.fileSize,
   })
   currentStep.value = 1
-  showReuploadButton.value = true
   ElMessage.success('文件上传成功！')
 }
 
@@ -401,12 +458,10 @@ const handleUploadError = (error: Error) => {
  * 处理重新上传
  */
 const handleReupload = () => {
-  // 立即隐藏重新上传按钮
-  showReuploadButton.value = false
-  
-  // 清空当前文件信息
+  // 清空当前文件信息和解析结果
   currentFileInfo.value = null
   parseResult.value = null
+  hasParsedCurrentFile.value = false
   globalStore.clearCurrent()
   
   // 回到第一步
@@ -426,12 +481,25 @@ const handleParse = async () => {
 
   parsing.value = true
   try {
-    await excelApi.parse(currentFileInfo.value.fileId)
+    const response = await excelApi.parse(currentFileInfo.value.fileId)
+    console.log('解析接口返回:', response)
+    
+          // 检查解析接口返回的状态
+      if (response && response.id) {
+        // 解析完成，设置解析结果
+        parseResult.value = response
+        hasParsedCurrentFile.value = true
+        ElMessage.success('解析完成！')
+        parsing.value = false
+      } else {
+        // 解析失败或没有返回ID
+        ElMessage.error('解析失败，请重试')
+        parsing.value = false
+      }
     await loadTasks()
   } catch (error) {
     ElMessage.error('解析失败，请重试')
     console.error('Parse error:', error)
-  } finally {
     parsing.value = false
   }
 }
@@ -440,27 +508,40 @@ const handleParse = async () => {
  * 轮询解析状态
  */
 const pollParseStatus = (taskId: string) => {
+  console.log('开始轮询任务状态:', taskId)
   const timer = setInterval(async () => {
     try {
       const result = await excelApi.getTaskDetail(taskId)
+      console.log('轮询状态结果:', result)
+      
       if (result.status === 'completed') {
         parseResult.value = result
-        currentStep.value = 2
+        // 解析完成后保持在第二步，不自动跳转到第三步
         ElMessage.success('解析完成！')
         clearInterval(timer)
+        parsing.value = false // 停止loading状态
         await loadTasks()
       } else if (result.status === 'failed') {
-        ElMessage.error('解析失败：' + result.message)
+        ElMessage.error('解析失败：' + (result.message || '未知错误'))
         clearInterval(timer)
+        parsing.value = false // 停止loading状态
+      } else if (result.status === 'processing' || result.status === 'pending') {
+        // 继续轮询，状态还在处理中
+        console.log('任务状态:', result.status, '继续轮询...')
       }
     } catch (error) {
       console.error('Poll status error:', error)
+      // 轮询出错时不要立即停止，继续尝试
     }
   }, 2000)
 
   // 30秒后停止轮询
   setTimeout(() => {
     clearInterval(timer)
+    if (parsing.value) {
+      ElMessage.warning('解析超时，请检查任务状态')
+      parsing.value = false // 超时后停止loading状态
+    }
   }, 30000)
 }
 
@@ -475,6 +556,32 @@ const viewDetail = () => {
       { type: 'info' }
     )
   }
+}
+
+/**
+ * 查看解析结果
+ */
+const viewParseResult = () => {
+  if (parseResult.value) {
+    currentStep.value = 2
+  }
+}
+
+/**
+ * 创建新的解析
+ */
+const createNewParse = () => {
+  // 清空当前文件信息和解析结果
+  currentFileInfo.value = null
+  parseResult.value = null
+  hasParsedCurrentFile.value = false
+  parsing.value = false
+  globalStore.clearCurrent()
+  
+  // 回到第一步
+  currentStep.value = 0
+  
+  ElMessage.info('请上传新的Excel文件进行解析')
 }
 
 /**
@@ -590,6 +697,71 @@ const downloadFile = (task: ExcelParseTask) => {
 const editTask = (task: ExcelParseTask) => {
   currentTask.value = task
   showTaskSettingDialog.value = true
+}
+
+/**
+ * 分享任务
+ */
+const shareTask = (task: ExcelParseTask) => {
+  try {
+    // 生成分享链接
+    const shareUrl = `${window.location.origin}/excel-search?fileCoding=${task.fileCoding || task.id}`
+    
+    // 复制到剪贴板
+    navigator.clipboard.writeText(shareUrl).then(() => {
+      ElMessage.success('分享链接已复制到剪贴板')
+      
+      // 显示分享链接详情
+      ElMessageBox.alert(
+        `<div style="text-align: left;">
+          <p><strong>分享链接：</strong></p>
+          <p style="word-break: break-all; background: #f5f5f5; padding: 10px; border-radius: 4px; margin: 10px 0;">
+            ${shareUrl}
+          </p>
+          <p style="color: #666; font-size: 14px;">
+            链接已复制到剪贴板，可以直接分享给其他人使用。
+          </p>
+        </div>`,
+        '分享成功',
+        {
+          dangerouslyUseHTMLString: true,
+          confirmButtonText: '确定',
+          type: 'success'
+        }
+      )
+    }).catch(() => {
+      // 如果复制失败，直接显示链接
+      ElMessageBox.alert(
+        `<div style="text-align: left;">
+          <p><strong>分享链接：</strong></p>
+          <p style="word-break: break-all; background: #f5f5f5; padding: 10px; border-radius: 4px; margin: 10px 0;">
+            ${shareUrl}
+          </p>
+          <p style="color: #666; font-size: 14px;">
+            请手动复制链接分享给其他人。
+          </p>
+        </div>`,
+        '分享链接',
+        {
+          dangerouslyUseHTMLString: true,
+          confirmButtonText: '复制链接',
+          type: 'info'
+        }
+      ).then(() => {
+        // 用户点击确定后，尝试复制
+        navigator.clipboard.writeText(shareUrl).then(() => {
+          ElMessage.success('链接已复制')
+        }).catch(() => {
+          ElMessage.warning('复制失败，请手动复制')
+        })
+      })
+    })
+    
+    console.log('分享任务:', task.excelFile, '链接:', shareUrl)
+  } catch (error: any) {
+    ElMessage.error('生成分享链接失败：' + (error.message || '未知错误'))
+    console.error('分享任务错误:', error)
+  }
 }
 
 
@@ -813,6 +985,12 @@ const handleTaskSettingSave = async (settingData: TaskSettingData) => {
   align-items: center;
 }
 
+.header-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
 .parse-content {
   text-align: center;
 }
@@ -823,6 +1001,14 @@ const handleTaskSettingSave = async (settingData: TaskSettingData) => {
 
 .parse-actions {
   margin-top: 20px;
+}
+
+.parse-status {
+  margin: 20px 0;
+  padding: 15px;
+  background-color: #f0f9ff;
+  border-radius: 8px;
+  border: 1px solid #e0f2fe;
 }
 
 .parse-result {

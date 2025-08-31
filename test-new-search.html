@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>新搜索API测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+        }
+
+        .test-section h3 {
+            margin-top: 0;
+            color: #2c3e50;
+        }
+
+        .button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 5px;
+        }
+
+        .button:hover {
+            background: #0056b3;
+        }
+
+        .success {
+            color: #28a745;
+        }
+
+        .info {
+            color: #17a2b8;
+        }
+
+        .warning {
+            color: #ffc107;
+        }
+
+        .api-example {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 10px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>新搜索API测试</h1>
+
+        <div class="test-section">
+            <h3>API更新说明</h3>
+            <p>搜索接口已更新为新的API：</p>
+            <ul>
+                <li>✅ 接口地址：<code>POST /excel/searchRows</code></li>
+                <li>✅ 支持多条件搜索</li>
+                <li>✅ 使用AND逻辑组合条件</li>
+                <li>✅ 返回结构化数据</li>
+                <li>⚠️ 暂时不支持分页</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h3>1. 请求参数格式</h3>
+            <p>新的搜索API请求格式：</p>
+            <div class="api-example">
+                {
+                "fileCode": "ba57f91138f04486",
+                "logic": "AND",
+                "searchQueries": [
+                {
+                "columnKey": "序号",
+                "columnValue": "1"
+                },
+                {
+                "columnKey": "上车地点",
+                "columnValue": "宝溢丰大厦"
+                }
+                ]
+                }
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>2. 响应数据格式</h3>
+            <p>API返回的数据结构：</p>
+            <div class="api-example">
+                {
+                "success": true,
+                "code": 0,
+                "message": "ok",
+                "data": [
+                {
+                "rowLine": 2,
+                "columnData": {
+                "序号": {
+                "id": 166,
+                "columnName": "序号",
+                "columnValue": "1"
+                },
+                "上车地点": {
+                "id": 171,
+                "columnName": "上车地点",
+                "columnValue": "宝溢丰大厦"
+                }
+                // ... 其他列数据
+                }
+                }
+                ]
+                }
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>3. 测试搜索功能</h3>
+            <p>测试新的搜索API功能：</p>
+            <button class="button" onclick="testSearch()">测试搜索功能</button>
+            <div class="info">
+                <p><strong>测试步骤：</strong></p>
+                <ol>
+                    <li>打开表格快搜页面</li>
+                    <li>在搜索字段中输入条件（如：序号=1）</li>
+                    <li>点击搜索按钮</li>
+                    <li>查看搜索结果是否正确显示</li>
+                    <li>检查控制台中的API请求日志</li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>4. 多条件搜索测试</h3>
+            <p>测试多个搜索条件的组合：</p>
+            <button class="button" onclick="testMultiCondition()">测试多条件搜索</button>
+            <div class="info">
+                <p><strong>测试用例：</strong></p>
+                <ul>
+                    <li>序号：1</li>
+                    <li>上车地点：宝溢丰大厦</li>
+                    <li>下车地点：宝溢丰大厦</li>
+                </ul>
+                <p>预期结果：找到匹配所有条件的记录</p>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>5. 数据转换验证</h3>
+            <p>验证API返回的数据是否正确转换为表格格式：</p>
+            <button class="button" onclick="verifyDataTransform()">验证数据转换</button>
+            <div class="info">
+                <p><strong>验证要点：</strong></p>
+                <ul>
+                    <li>✅ API返回的columnData正确转换为表格行数据</li>
+                    <li>✅ 表格列标题正确显示</li>
+                    <li>✅ 表格数据正确显示在对应列中</li>
+                    <li>✅ 搜索结果数量正确</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>6. 功能对比</h3>
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="background: #f8f9fa;">
+                        <th style="border: 1px solid #ddd; padding: 8px;">功能</th>
+                        <th style="border: 1px solid #ddd; padding: 8px;">旧API</th>
+                        <th style="border: 1px solid #ddd; padding: 8px;">新API</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td style="border: 1px solid #ddd; padding: 8px;">接口地址</td>
+                        <td style="border: 1px solid #ddd; padding: 8px;">GET /excel/searchData</td>
+                        <td style="border: 1px solid #ddd; padding: 8px;">POST /excel/searchRows</td>
+                    </tr>
+                    <tr>
+                        <td style="border: 1px solid #ddd; padding: 8px;">分页支持</td>
+                        <td style="border: 1px solid #ddd; padding: 8px;">✅ 支持</td>
+                        <td style="border: 1px solid #ddd; padding: 8px;">❌ 不支持</td>
+                    </tr>
+                    <tr>
+                        <td style="border: 1px solid #ddd; padding: 8px;">多条件搜索</td>
+                        <td style="border: 1px solid #ddd; padding: 8px;">✅ 支持</td>
+                        <td style="border: 1px solid #ddd; padding: 8px;">✅ 支持</td>
+                    </tr>
+                    <tr>
+                        <td style="border: 1px solid #ddd; padding: 8px;">数据结构</td>
+                        <td style="border: 1px solid #ddd; padding: 8px;">简单数组</td>
+                        <td style="border: 1px solid #ddd; padding: 8px;">结构化对象</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        function testSearch() {
+            const baseUrl = window.location.origin;
+            const link = `${baseUrl}/excel-search?fileCoding=ba57f91138f04486`;
+            window.open(link, '_blank');
+
+            alert('请在搜索字段中输入"序号=1"进行测试，查看控制台中的API请求日志。');
+        }
+
+        function testMultiCondition() {
+            const baseUrl = window.location.origin;
+            const link = `${baseUrl}/excel-search?fileCoding=ba57f91138f04486`;
+            window.open(link, '_blank');
+
+            alert('请填写多个搜索条件：\n- 序号：1\n- 上车地点：宝溢丰大厦\n- 下车地点：宝溢丰大厦\n然后点击搜索按钮。');
+        }
+
+        function verifyDataTransform() {
+            const baseUrl = window.location.origin;
+            const link = `${baseUrl}/excel-search?fileCoding=ba57f91138f04486`;
+            window.open(link, '_blank');
+
+            alert('请执行搜索后检查：\n1. 表格列标题是否正确\n2. 数据是否正确显示在对应列中\n3. 搜索结果数量是否正确');
+        }
+
+        // 页面加载时显示信息
+        window.onload = function () {
+            console.log('新搜索API测试页面已加载');
+            console.log('测试文件编码：ba57f91138f04486');
+            console.log('新API地址：POST /excel/searchRows');
+        };
+    </script>
+</body>
+
+</html>

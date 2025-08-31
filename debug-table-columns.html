@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>表格列生成调试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .debug-section {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+        }
+
+        .button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+
+        .button:hover {
+            background: #0056b3;
+        }
+
+        .log-output {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #e9ecef;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>表格列生成调试</h1>
+
+        <div class="debug-section">
+            <h3>调试步骤</h3>
+            <ol>
+                <li>点击下面的按钮打开表格快搜页面</li>
+                <li>打开浏览器开发者工具（F12）</li>
+                <li>查看控制台日志</li>
+                <li>检查是否有以下日志：
+                    <ul>
+                        <li>"搜索字段: [...]"</li>
+                        <li>"开始生成表格列，输入headers: [...]"</li>
+                        <li>"生成的表格列: [...]"</li>
+                    </ul>
+                </li>
+            </ol>
+            <button class="button" onclick="openDebugPage()">打开调试页面</button>
+        </div>
+
+        <div class="debug-section">
+            <h3>预期日志输出</h3>
+            <div class="log-output">
+                搜索字段: ["序号", "日期", "使用时间", "结束时间", "上车地点", "途径地点", "下车地点"]
+                开始生成表格列，输入headers: ["序号", "日期", "使用时间", "结束时间", "上车地点", "途径地点", "下车地点"]
+                生成的表格列: [
+                {prop: "序号", label: "序号", width: "80", minWidth: undefined},
+                {prop: "日期", label: "日期", width: "120", minWidth: undefined},
+                {prop: "使用时间", label: "使用时间", width: "120", minWidth: undefined},
+                {prop: "结束时间", label: "结束时间", width: "120", minWidth: undefined},
+                {prop: "上车地点", label: "上车地点", width: "100", minWidth: "120"},
+                {prop: "途径地点", label: "途径地点", width: "100", minWidth: "120"},
+                {prop: "下车地点", label: "下车地点", width: "100", minWidth: "120"}
+                ]
+            </div>
+        </div>
+
+        <div class="debug-section">
+            <h3>常见问题</h3>
+            <ul>
+                <li><strong>没有看到日志</strong>：检查API请求是否成功</li>
+                <li><strong>搜索字段为空</strong>：检查API响应中的searchHeaders</li>
+                <li><strong>表格列为空</strong>：检查generateTableColumns函数是否被调用</li>
+                <li><strong>表格不显示</strong>：检查模板中的v-for循环</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        function openDebugPage() {
+            const baseUrl = window.location.origin;
+            const link = `${baseUrl}/excel-search?fileCoding=ba57f91138f04486`;
+            window.open(link, '_blank');
+
+            alert('请打开开发者工具查看控制台日志，确认表格列生成过程。');
+        }
+
+        console.log('调试页面已加载');
+        console.log('测试文件编码：ba57f91138f04486');
+    </script>
+</body>
+
+</html>

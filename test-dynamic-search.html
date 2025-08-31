@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>动态搜索字段测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+        }
+
+        .test-section h3 {
+            margin-top: 0;
+            color: #2c3e50;
+        }
+
+        .button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 5px;
+        }
+
+        .button:hover {
+            background: #0056b3;
+        }
+
+        .success {
+            color: #28a745;
+        }
+
+        .info {
+            color: #17a2b8;
+        }
+
+        .warning {
+            color: #ffc107;
+        }
+
+        .demo-data {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 10px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            overflow-x: auto;
+        }
+
+        .field-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 10px 0;
+        }
+
+        .field-tag {
+            background: #e9ecef;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>动态搜索字段测试</h1>
+
+        <div class="test-section">
+            <h3>功能说明</h3>
+            <p>表格快搜页面现在支持动态生成搜索字段：</p>
+            <ul>
+                <li>✅ 根据Excel文件的实际列结构生成搜索字段</li>
+                <li>✅ 自动适配不同数量的搜索字段</li>
+                <li>✅ 响应式布局，自动调整列数</li>
+                <li>✅ 动态生成表格列</li>
+                <li>✅ 显示实际文件名</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h3>1. Demo数据说明</h3>
+            <p>测试文件编码：<strong>ba57f91138f04486</strong></p>
+            <p>API返回的搜索字段：</p>
+            <div class="field-list">
+                <span class="field-tag">序号</span>
+                <span class="field-tag">日期</span>
+                <span class="field-tag">使用时间</span>
+                <span class="field-tag">结束时间</span>
+                <span class="field-tag">上车地点</span>
+                <span class="field-tag">途径地点</span>
+                <span class="field-tag">下车地点</span>
+            </div>
+            <p>文件名：<strong>444.xlsx</strong></p>
+        </div>
+
+        <div class="test-section">
+            <h3>2. API响应示例</h3>
+            <p>GET /excel/meta?fileCoding=ba57f91138f04486 返回：</p>
+            <div class="demo-data">
+                {
+                "success": true,
+                "code": 0,
+                "message": "ok",
+                "data": {
+                "fileInfo": {
+                "fileInfo": {
+                "fileName": "444.xlsx"
+                },
+                "extendData": {
+                "searchHeaders": [
+                "序号", "日期", "", "使用时间", "结束时间",
+                "上车地点", "途径地点", "下车地点"
+                ]
+                }
+                }
+                }
+                }
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>3. 测试动态搜索字段</h3>
+            <p>点击下面的按钮测试动态搜索字段功能：</p>
+            <button class="button" onclick="testDynamicSearch()">测试动态搜索字段</button>
+            <div class="info">
+                <p><strong>测试要点：</strong></p>
+                <ol>
+                    <li>页面标题显示实际文件名 "444.xlsx"</li>
+                    <li>搜索字段根据API返回的数据动态生成</li>
+                    <li>字段数量自动适配布局</li>
+                    <li>表格列也根据字段动态生成</li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>4. 响应式布局测试</h3>
+            <p>测试不同屏幕尺寸下的布局适配：</p>
+            <button class="button" onclick="testResponsive()">测试响应式布局</button>
+            <div class="info">
+                <p><strong>布局特点：</strong></p>
+                <ul>
+                    <li>桌面端：自适应列布局，根据字段数量自动调整</li>
+                    <li>平板端：自适应列布局</li>
+                    <li>移动端：单列布局，垂直排列</li>
+                    <li>使用CSS Grid的auto-fit特性</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>5. 功能验证</h3>
+            <p>验证以下功能是否正常：</p>
+            <ul>
+                <li>✅ 动态加载文件元数据</li>
+                <li>✅ 生成搜索表单字段</li>
+                <li>✅ 生成表格列配置</li>
+                <li>✅ 搜索功能正常工作</li>
+                <li>✅ 重置功能正常工作</li>
+                <li>✅ 导出功能正常工作</li>
+            </ul>
+            <button class="button" onclick="openExcelSearch()">验证功能</button>
+        </div>
+    </div>
+
+    <script>
+        function testDynamicSearch() {
+            const baseUrl = window.location.origin;
+            const link = `${baseUrl}/excel-search?fileCoding=ba57f91138f04486`;
+            window.open(link, '_blank');
+
+            alert('请检查以下功能：\n1. 页面标题是否显示"444.xlsx"\n2. 搜索字段是否包含：序号、日期、使用时间、结束时间、上车地点、途径地点、下车地点\n3. 字段布局是否自适应');
+        }
+
+        function testResponsive() {
+            const baseUrl = window.location.origin;
+            const link = `${baseUrl}/excel-search?fileCoding=ba57f91138f04486`;
+            window.open(link, '_blank');
+
+            alert('请在不同设备或调整浏览器窗口大小测试响应式布局：\n1. 桌面端：多列布局\n2. 平板端：中等列数\n3. 移动端：单列布局');
+        }
+
+        function openExcelSearch() {
+            const baseUrl = window.location.origin;
+            const link = `${baseUrl}/excel-search?fileCoding=ba57f91138f04486`;
+            window.open(link, '_blank');
+        }
+
+        // 页面加载时显示信息
+        window.onload = function () {
+            console.log('动态搜索字段测试页面已加载');
+            console.log('测试文件编码：ba57f91138f04486');
+            console.log('预期搜索字段：序号、日期、使用时间、结束时间、上车地点、途径地点、下车地点');
+        };
+    </script>
+</body>
+
+</html>

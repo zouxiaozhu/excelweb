@@ -27,6 +27,14 @@ const routes: RouteRecordRaw[] = [
     }
   },
   {
+    path: '/excel-search',
+    name: 'ExcelSearch',
+    component: () => import('../pages/ExcelSearch.vue'),
+    meta: {
+      title: '表格快搜 - Excel Web'
+    }
+  },
+  {
     path: '/user-profile',
     name: 'UserProfile',
     component: () => import('../pages/UserProfile.vue'),
