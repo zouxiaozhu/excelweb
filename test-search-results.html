@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>搜索结果处理验证</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .test-section {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+        }
+
+        .button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+
+        .button:hover {
+            background: #0056b3;
+        }
+
+        .success {
+            color: #28a745;
+        }
+
+        .info {
+            color: #17a2b8;
+        }
+
+        .warning {
+            color: #ffc107;
+        }
+
+        .error {
+            color: #dc3545;
+        }
+
+        .api-example {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            border: 1px solid #e9ecef;
+            overflow-x: auto;
+        }
+
+        .data-flow {
+            background: #e7f3ff;
+            border: 1px solid #b3d9ff;
+            border-radius: 4px;
+            padding: 10px;
+            margin: 10px 0;
+        }
+
+        .data-flow h4 {
+            margin-top: 0;
+            color: #0066cc;
+        }
+
+        .data-flow ol {
+            margin: 5px 0;
+            padding-left: 20px;
+        }
+
+        .data-flow li {
+            margin: 3px 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>搜索结果处理验证</h1>
+
+        <div class="test-section">
+            <h3>数据处理流程</h3>
+            <div class="data-flow">
+                <h4>📊 数据流转过程：</h4>
+                <ol>
+                    <li><strong>API原始响应</strong>：服务器返回完整的响应对象</li>
+                    <li><strong>响应拦截器处理</strong>：当 code === 0 时，返回 data.data</li>
+                    <li><strong>组件接收</strong>：直接接收到处理后的数组数据</li>
+                    <li><strong>数据转换</strong>：将 columnData 转换为表格行数据</li>
+                    <li><strong>表格显示</strong>：使用 tableColumns 显示数据</li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>API原始响应格式</h3>
+            <p>服务器返回的完整响应：</p>
+            <div class="api-example">
+                {
+                "success": true,
+                "code": 0,
+                "message": "ok",
+                "data": [
+                {
+                "rowLine": 2,
+                "columnData": {
+                "所在位置": {
+                "id": 13650,
+                "columnName": "所在位置",
+                "columnValue": "所在位置(示例)"
+                },
+                "生产厂家": {
+                "id": 13653,
+                "columnName": "生产厂家",
+                "columnValue": "生产厂家(示例)"
+                }
+                // ... 其他列数据
+                }
+                }
+                ]
+                }
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>响应拦截器处理后</h3>
+            <p>组件实际接收到的数据（response）：</p>
+            <div class="api-example">
+                [
+                {
+                "rowLine": 2,
+                "columnData": {
+                "所在位置": {
+                "id": 13650,
+                "columnName": "所在位置",
+                "columnValue": "所在位置(示例)"
+                },
+                "生产厂家": {
+                "id": 13653,
+                "columnName": "生产厂家",
+                "columnValue": "生产厂家(示例)"
+                }
+                // ... 其他列数据
+                }
+                }
+                ]
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>数据转换过程</h3>
+            <p>代码中的转换逻辑：</p>
+            <div class="api-example">
+                // 转换数据格式以适配表格显示
+                searchResults.value = response.map((item: any) => {
+                const rowData: any = {}
+                Object.keys(item.columnData).forEach(columnKey => {
+                rowData[columnKey] = item.columnData[columnKey].columnValue
+                })
+                return rowData
+                })
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>转换后的表格数据</h3>
+            <p>最终用于表格显示的数据：</p>
+            <div class="api-example">
+                [
+                {
+                "所在位置": "所在位置(示例)",
+                "生产厂家": "生产厂家(示例)",
+                "负责人": "负责人(示例)",
+                "规格型号": "规格型号(示例)",
+                "联系方式(数字)": "1",
+                "编号": "编号(示例)",
+                "器材名称": "器材名称(示例)",
+                "有效期": "有效期(示例)"
+                }
+                ]
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>验证步骤</h3>
+            <ol>
+                <li>打开表格快搜页面</li>
+                <li>执行搜索操作</li>
+                <li>查看控制台日志，确认数据转换过程</li>
+                <li>检查表格是否正确显示数据</li>
+                <li>验证表格列标题与数据是否匹配</li>
+            </ol>
+            <button class="button" onclick="openTestPage()">打开测试页面</button>
+        </div>
+
+        <div class="test-section">
+            <h3>预期控制台日志</h3>
+            <div class="api-example">
+                搜索参数: {fileCode: "ba57f91138f04486", logic: "AND", searchQueries: [...]}
+                API响应: [
+                {
+                rowLine: 2,
+                columnData: {
+                "所在位置": {id: 13650, columnName: "所在位置", columnValue: "所在位置(示例)"},
+                "生产厂家": {id: 13653, columnName: "生产厂家", columnValue: "生产厂家(示例)"}
+                // ... 其他列数据
+                }
+                }
+                ]
+                搜索结果: [
+                {
+                "所在位置": "所在位置(示例)",
+                "生产厂家": "生产厂家(示例)",
+                "负责人": "负责人(示例)",
+                "规格型号": "规格型号(示例)",
+                "联系方式(数字)": "1",
+                "编号": "编号(示例)",
+                "器材名称": "器材名称(示例)",
+                "有效期": "有效期(示例)"
+                }
+                ]
+                当前表格列: [
+                {prop: "所在位置", label: "所在位置", width: "120", minWidth: undefined},
+                {prop: "生产厂家", label: "生产厂家", width: "120", minWidth: undefined}
+                // ... 其他列
+                ]
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>可能的问题排查</h3>
+            <div class="info">
+                <p><strong>问题：搜索结果为空</strong></p>
+                <p>排查：检查API响应是否为数组，确认columnData结构</p>
+
+                <p><strong>问题：表格列不显示</strong></p>
+                <p>排查：确认tableColumns是否正确生成，检查prop与columnData键名匹配</p>
+
+                <p><strong>问题：数据错位</strong></p>
+                <p>排查：确认columnData中的字段名与表格列的prop完全一致</p>
+
+                <p><strong>问题：转换失败</strong></p>
+                <p>排查：检查item.columnData是否存在，确认columnValue字段</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openTestPage() {
+            const baseUrl = window.location.origin;
+            const link = `${baseUrl}/excel-search?fileCoding=ba57f91138f04486`;
+            window.open(link, '_blank');
+
+            alert('请执行搜索操作，然后查看控制台日志确认数据处理流程。');
+        }
+
+        console.log('搜索结果处理验证页面已加载');
+        console.log('测试文件编码：ba57f91138f04486');
+        console.log('验证重点：响应拦截器处理、数据转换、表格显示');
+    </script>
+</body>
+
+</html>

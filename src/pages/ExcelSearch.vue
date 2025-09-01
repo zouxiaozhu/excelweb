@@ -193,6 +193,12 @@ const tableColumns = ref<any[]>([])
 // 动态生成表格列
 const generateTableColumns = (headers: string[]) => {
   console.log('开始生成表格列，输入headers:', headers)
+  if (!headers || headers.length === 0) {
+    console.warn('没有搜索字段，无法生成表格列')
+    tableColumns.value = []
+    return
+  }
+  
   tableColumns.value = headers.map((header, index) => ({
     prop: header,
     label: header,
@@ -227,23 +233,26 @@ const loadFileMeta = async () => {
   loadingMeta.value = true
   try {
     const response = await excelApi.getExcelMeta(fileCoding.value)
-    fileMeta.value = response
     
-    // 获取可搜索的字段
-    const headers = response.fileInfo?.extendData?.searchHeaders || []
-    searchHeaders.value = headers.filter((header: string) => header && header.trim())
+      fileMeta.value = response
+      // 获取可搜索的字段
+      const headers = response.fileInfo?.extendData?.searchHeaders || []
+      searchHeaders.value = headers.filter((header: string) => header && header.trim())
+      
+      console.log('API响应:', response)
+      console.log('搜索字段:', searchHeaders.value)
+      
+      // 动态生成搜索表单
+      generateSearchForm(searchHeaders.value)
+      
+      // 动态生成表格列
+      generateTableColumns(searchHeaders.value)
+      
+      console.log('文件元数据加载成功:', response)
+      console.log('生成的表格列:', tableColumns.value)
     
-    console.log('搜索字段:', searchHeaders.value)
-    
-    // 动态生成搜索表单
-    generateSearchForm(searchHeaders.value)
-    
-    // 动态生成表格列
-    generateTableColumns(searchHeaders.value)
-    
-    console.log('文件元数据加载成功:', response)
-    console.log('生成的表格列:', tableColumns.value)
   } catch (error: any) {
+    ElMessage.error('加载文件信息失败：' + (error.message || '未知错误'))
     console.error('加载文件元数据失败:', error)
   } finally {
     loadingMeta.value = false
@@ -283,7 +292,10 @@ const handleSearch = async () => {
     
     console.log('搜索参数:', searchParams)
     
-    const response =  (await excelApi.searchExcelData(searchParams) )|| []
+    const response = await excelApi.searchExcelData(searchParams)
+    const tableColumns = response[0].columnData
+   
+    
       // 转换数据格式以适配表格显示
       searchResults.value = response.map((item: any) => {
         const rowData: any = {}
@@ -293,8 +305,12 @@ const handleSearch = async () => {
         return rowData
       })
       
-      totalCount.value = searchResults.value.length
+      console.log('API响应:', response)
+      console.log('搜索结果:', searchResults.value)
+      console.log('当前表格列:', tableColumns.value)
       
+      totalCount.value = searchResults.value.length
+   
       if (searchResults.value.length === 0) {
         ElMessage.info('未找到匹配的数据')
       } else {

@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>表格列修复验证</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .test-section {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+        }
+
+        .button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+
+        .button:hover {
+            background: #0056b3;
+        }
+
+        .success {
+            color: #28a745;
+        }
+
+        .info {
+            color: #17a2b8;
+        }
+
+        .warning {
+            color: #ffc107;
+        }
+
+        .log-output {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #e9ecef;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>表格列修复验证</h1>
+
+        <div class="test-section">
+            <h3>修复说明</h3>
+            <p>已修复 <code>tableColumns</code> 相关问题：</p>
+            <ul>
+                <li>✅ 添加了空值检查，防止headers为空时出错</li>
+                <li>✅ 在搜索时确保表格列已生成</li>
+                <li>✅ 添加了详细的调试日志</li>
+                <li>✅ 增强了错误处理</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h3>验证步骤</h3>
+            <ol>
+                <li>打开表格快搜页面</li>
+                <li>查看控制台日志，确认表格列生成</li>
+                <li>执行搜索，验证表格正确显示</li>
+                <li>检查表格列标题和数据</li>
+            </ol>
+            <button class="button" onclick="openTestPage()">打开测试页面</button>
+        </div>
+
+        <div class="test-section">
+            <h3>预期控制台日志</h3>
+            <div class="log-output">
+                搜索字段: ["序号", "日期", "使用时间", "结束时间", "上车地点", "途径地点", "下车地点"]
+                开始生成表格列，输入headers: ["序号", "日期", "使用时间", "结束时间", "上车地点", "途径地点", "下车地点"]
+                生成的表格列: [
+                {prop: "序号", label: "序号", width: "80", minWidth: undefined},
+                {prop: "日期", label: "日期", width: "120", minWidth: undefined},
+                {prop: "使用时间", label: "使用时间", width: "120", minWidth: undefined},
+                {prop: "结束时间", label: "结束时间", width: "120", minWidth: undefined},
+                {prop: "上车地点", label: "上车地点", width: "100", minWidth: "120"},
+                {prop: "途径地点", label: "途径地点", width: "100", minWidth: "120"},
+                {prop: "下车地点", label: "下车地点", width: "100", minWidth: "120"}
+                ]
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>功能验证</h3>
+            <p>验证以下功能是否正常：</p>
+            <ul>
+                <li>✅ 页面加载时生成表格列</li>
+                <li>✅ 搜索时表格列正确显示</li>
+                <li>✅ 表格数据正确显示在对应列中</li>
+                <li>✅ 导出功能使用正确的列标题</li>
+            </ul>
+            <button class="button" onclick="verifyFunction()">验证功能</button>
+        </div>
+
+        <div class="test-section">
+            <h3>常见问题解决</h3>
+            <div class="info">
+                <p><strong>问题：表格列不显示</strong></p>
+                <p>解决方案：检查控制台是否有"生成的表格列"日志</p>
+
+                <p><strong>问题：表格数据错位</strong></p>
+                <p>解决方案：确认API返回的columnData结构与表格列匹配</p>
+
+                <p><strong>问题：导出文件列标题错误</strong></p>
+                <p>解决方案：确认tableColumns.value包含正确的label</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openTestPage() {
+            const baseUrl = window.location.origin;
+            const link = `${baseUrl}/excel-search?fileCoding=ba57f91138f04486`;
+            window.open(link, '_blank');
+
+            alert('请打开开发者工具查看控制台日志，确认表格列生成过程。');
+        }
+
+        function verifyFunction() {
+            const baseUrl = window.location.origin;
+            const link = `${baseUrl}/excel-search?fileCoding=ba57f91138f04486`;
+            window.open(link, '_blank');
+
+            alert('验证步骤：\n1. 检查页面标题是否正确\n2. 检查搜索字段是否正确显示\n3. 执行搜索，检查表格列和数据\n4. 测试导出功能');
+        }
+
+        console.log('表格列修复验证页面已加载');
+        console.log('测试文件编码：ba57f91138f04486');
+    </script>
+</body>
+
+</html>

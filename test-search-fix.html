@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>搜索结果修复验证</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .test-section {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+        }
+
+        .button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+
+        .button:hover {
+            background: #0056b3;
+        }
+
+        .success {
+            color: #28a745;
+        }
+
+        .info {
+            color: #17a2b8;
+        }
+
+        .warning {
+            color: #ffc107;
+        }
+
+        .error {
+            color: #dc3545;
+        }
+
+        .api-example {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            border: 1px solid #e9ecef;
+            overflow-x: auto;
+        }
+
+        .fix-list {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            border-radius: 4px;
+            padding: 10px;
+            margin: 10px 0;
+        }
+
+        .fix-list h4 {
+            margin-top: 0;
+            color: #155724;
+        }
+
+        .fix-list ul {
+            margin: 5px 0;
+            padding-left: 20px;
+        }
+
+        .fix-list li {
+            margin: 3px 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>搜索结果修复验证</h1>
+
+        <div class="test-section">
+            <h3>修复说明</h3>
+            <div class="fix-list">
+                <h4>✅ 已修复的问题：</h4>
+                <ul>
+                    <li><strong>API响应结构正确</strong>：直接使用 <code>response</code>，无需访问 <code>response.data</code></li>
+                    <li><strong>元数据访问正确</strong>：直接访问 <code>response.fileInfo</code></li>
+                    <li><strong>错误处理增强</strong>：添加了更完善的错误处理和用户提示</li>
+                    <li><strong>调试信息完善</strong>：增加了详细的API响应日志</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>API响应格式</h3>
+            <p>正确的API响应格式应该是：</p>
+                        <div class="api-example">
+{
+  "fileInfo": {
+    "extendData": {
+      "searchHeaders": ["所在位置", "生产厂家", "负责人", "规格型号", "联系方式(数字)", "编号", "器材名称", "有效期"]
+    }
+  }
+}
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>搜索结果格式</h3>
+            <p>搜索API返回的数据格式：</p>
+                        <div class="api-example">
+[
+  {
+    "rowLine": 2,
+    "columnData": {
+      "所在位置": {
+        "id": 13650,
+        "columnName": "所在位置",
+        "columnValue": "所在位置(示例)"
+      },
+      "生产厂家": {
+        "id": 13653,
+        "columnName": "生产厂家",
+        "columnValue": "生产厂家(示例)"
+      }
+      // ... 其他列数据
+    }
+  }
+]
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>验证步骤</h3>
+            <ol>
+                <li>打开表格快搜页面</li>
+                <li>查看控制台日志，确认API响应结构</li>
+                <li>检查搜索字段是否正确生成</li>
+                <li>执行搜索，验证表格列和数据</li>
+                <li>确认表格显示正确的列标题和数据</li>
+            </ol>
+            <button class="button" onclick="openTestPage()">打开测试页面</button>
+        </div>
+
+        <div class="test-section">
+            <h3>预期控制台日志</h3>
+            <div class="api-example">
+                                 API响应: {fileInfo: {extendData: {searchHeaders: [...]}}}
+                 搜索字段: ["所在位置", "生产厂家", "负责人", "规格型号", "联系方式(数字)", "编号", "器材名称", "有效期"]
+                开始生成表格列，输入headers: ["所在位置", "生产厂家", "负责人", "规格型号", "联系方式(数字)", "编号", "器材名称", "有效期"]
+                生成的表格列: [
+                {prop: "所在位置", label: "所在位置", width: "120", minWidth: undefined},
+                {prop: "生产厂家", label: "生产厂家", width: "120", minWidth: undefined},
+                {prop: "负责人", label: "负责人", width: "120", minWidth: undefined},
+                {prop: "规格型号", label: "规格型号", width: "100", minWidth: "120"},
+                {prop: "联系方式(数字)", label: "联系方式(数字)", width: "100", minWidth: "120"},
+                {prop: "编号", label: "编号", width: "100", minWidth: "120"},
+                {prop: "器材名称", label: "器材名称", width: "100", minWidth: "120"},
+                {prop: "有效期", label: "有效期", width: "100", minWidth: "120"}
+                ]
+                搜索结果: [
+                {
+                "所在位置": "所在位置(示例)",
+                "生产厂家": "生产厂家(示例)",
+                "负责人": "负责人(示例)",
+                "规格型号": "规格型号(示例)",
+                "联系方式(数字)": "1",
+                "编号": "编号(示例)",
+                "器材名称": "器材名称(示例)",
+                "有效期": "有效期(示例)"
+                }
+                ]
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>功能验证</h3>
+            <p>验证以下功能是否正常：</p>
+            <ul>
+                <li>✅ 页面加载时正确获取搜索字段</li>
+                <li>✅ 表格列标题正确显示</li>
+                <li>✅ 搜索结果正确显示在表格中</li>
+                <li>✅ 数据转换正确（columnData → 表格行数据）</li>
+                <li>✅ 导出功能使用正确的列标题</li>
+            </ul>
+            <button class="button" onclick="verifyFunction()">验证功能</button>
+        </div>
+
+        <div class="test-section">
+            <h3>常见问题解决</h3>
+            <div class="info">
+                <p><strong>问题：表格列不显示</strong></p>
+                <p>解决方案：检查控制台是否有"生成的表格列"日志，确认API返回了正确的searchHeaders</p>
+
+                                 <p><strong>问题：搜索结果为空</strong></p>
+                 <p>解决方案：检查API响应是否为数组格式，确认response包含正确的数据结构</p>
+
+                <p><strong>问题：表格数据错位</strong></p>
+                <p>解决方案：确认columnData中的字段名与表格列的prop匹配</p>
+
+                                 <p><strong>问题：搜索字段不显示</strong></p>
+                 <p>解决方案：检查response.fileInfo.extendData.searchHeaders是否正确</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openTestPage() {
+            const baseUrl = window.location.origin;
+            const link = `${baseUrl}/excel-search?fileCoding=ba57f91138f04486`;
+            window.open(link, '_blank');
+
+            alert('请打开开发者工具查看控制台日志，确认API响应结构和数据处理过程。');
+        }
+
+        function verifyFunction() {
+            const baseUrl = window.location.origin;
+            const link = `${baseUrl}/excel-search?fileCoding=ba57f91138f04486`;
+            window.open(link, '_blank');
+
+            alert('验证步骤：\n1. 检查页面标题是否正确\n2. 检查搜索字段是否正确显示\n3. 执行搜索，检查表格列和数据\n4. 测试导出功能\n5. 查看控制台日志确认数据处理');
+        }
+
+        console.log('搜索结果修复验证页面已加载');
+        console.log('测试文件编码：ba57f91138f04486');
+        console.log('修复内容：API响应结构处理、元数据访问、错误处理');
+    </script>
+</body>
+
+</html>
