@@ -7,7 +7,7 @@
         type="warning"
         :closable="true"
         show-icon
-        @close="hideExperienceWarning = true"
+        @close="handleCloseExperienceWarning"
       >
         <template #default>
           <p>您正在使用体验账号，数据仅用于测试，请勿上传重要数据。数据会定期清理，建议使用自己的账号登录。</p>
@@ -367,7 +367,7 @@
  * @store globalStore - 全局状态管理
  */
 
-import { ref, reactive, onMounted, computed, nextTick } from 'vue'
+import { ref, reactive, onMounted, computed, nextTick, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ArrowLeft, Refresh } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -401,6 +401,27 @@ const currentTask = ref<ExcelParseTask | null>(null)
 // 计算属性 - 登录状态
 const isLoggedIn = computed(() => globalStore.isLoggedIn)
 const isExperienceAccount = computed(() => globalStore.isExperienceAccount)
+
+// 初始化体验账号提醒状态
+const initExperienceWarning = () => {
+  console.log('初始化体验账号提醒状态:', {
+    isExperienceAccount: isExperienceAccount.value,
+    hideExperienceWarning: hideExperienceWarning.value
+  })
+  
+  if (isExperienceAccount.value) {
+    const hidden = localStorage.getItem('hideExperienceWarning')
+    console.log('从localStorage获取的隐藏状态:', hidden)
+    hideExperienceWarning.value = hidden === 'true'
+    console.log('设置后的隐藏状态:', hideExperienceWarning.value)
+  }
+}
+
+// 处理关闭体验账号提醒
+const handleCloseExperienceWarning = () => {
+  hideExperienceWarning.value = true
+  localStorage.setItem('hideExperienceWarning', 'true')
+}
 
 // 响应式数据
 const currentStep = ref(0)
@@ -824,9 +845,20 @@ onMounted(() => {
     return
   }
   
-  loadTasks()
+  // 初始化体验账号提醒状态
+  initExperienceWarning()
   
+  loadTasks()
+})
 
+// 监听登录状态变化，重新初始化体验账号提醒
+watch([isLoggedIn, isExperienceAccount], ([loggedIn, isExp]) => {
+  if (loggedIn && isExp) {
+    // 延迟一下确保store状态完全更新
+    nextTick(() => {
+      initExperienceWarning()
+    })
+  }
 })
 
 /**

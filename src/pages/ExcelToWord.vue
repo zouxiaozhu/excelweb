@@ -7,7 +7,7 @@
         type="warning"
         :closable="true"
         show-icon
-        @close="hideExperienceWarning = true"
+        @close="handleCloseExperienceWarning"
       >
         <template #default>
           <p>您正在使用体验账号，数据仅用于测试，请勿上传重要数据。数据会定期清理，建议使用自己的账号登录。</p>
@@ -298,7 +298,7 @@
  * @reference https://www.deskwork.cn/admin/document-convert/new
  */
 
-import { ref, reactive, onMounted, computed } from 'vue'
+import { ref, reactive, onMounted, computed, watch, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { ArrowLeft, Document, Delete, Refresh } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -319,6 +319,20 @@ const hideExperienceWarning = ref(false)
 // 计算属性 - 登录状态
 const isLoggedIn = computed(() => globalStore.isLoggedIn)
 const isExperienceAccount = computed(() => globalStore.isExperienceAccount)
+
+// 初始化体验账号提醒状态
+const initExperienceWarning = () => {
+  if (isExperienceAccount.value) {
+    const hidden = localStorage.getItem('hideExperienceWarning')
+    hideExperienceWarning.value = hidden === 'true'
+  }
+}
+
+// 处理关闭体验账号提醒
+const handleCloseExperienceWarning = () => {
+  hideExperienceWarning.value = true
+  localStorage.setItem('hideExperienceWarning', 'true')
+}
 
 // 转换设置
 const convertSettings = reactive({
@@ -561,7 +575,20 @@ onMounted(() => {
     return
   }
   
+  // 初始化体验账号提醒状态
+  initExperienceWarning()
+  
   loadConversionHistory()
+})
+
+// 监听登录状态变化，重新初始化体验账号提醒
+watch([isLoggedIn, isExperienceAccount], ([loggedIn, isExp]) => {
+  if (loggedIn && isExp) {
+    // 延迟一下确保store状态完全更新
+    nextTick(() => {
+      initExperienceWarning()
+    })
+  }
 })
 
 /**

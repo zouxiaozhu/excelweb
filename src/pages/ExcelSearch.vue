@@ -107,7 +107,6 @@
             :key="index"
             :prop="column.prop"
             :label="column.label"
-            :width="column.width"
             :min-width="column.minWidth"
             show-overflow-tooltip
           >
@@ -116,19 +115,6 @@
             </template>
           </el-table-column>
         </el-table>
-        
-        <!-- 分页（新API不支持分页，暂时隐藏） -->
-        <!-- <div class="pagination-wrapper">
-          <el-pagination
-            v-model:current-page="pagination.current"
-            v-model:page-size="pagination.pageSize"
-            :total="totalCount"
-            :page-sizes="[10, 20, 50, 100]"
-            layout="total, sizes, prev, pager, next, jumper"
-            @size-change="handleSizeChange"
-            @current-change="handleCurrentChange"
-          />
-        </div> -->
       </div>
       
       <!-- 无结果提示 -->
@@ -293,9 +279,23 @@ const handleSearch = async () => {
     console.log('搜索参数:', searchParams)
     
     const response = await excelApi.searchExcelData(searchParams)
-    const tableColumns = response[0].columnData
-   
     
+    // 处理searchRow返回的数据格式
+    if (response && response.length > 0) {
+      // 从第一条数据中获取列信息
+      const firstRow = response[0]
+      const columnData = firstRow.columnData
+      
+      console.log('API返回的原始数据:', response)
+      console.log('第一条数据的列信息:', columnData)
+      
+      // 动态生成表格列配置
+      tableColumns.value = Object.keys(columnData).map((columnKey, index) => ({
+        prop: columnKey,
+        label: columnData[columnKey].columnName,
+        minWidth: '120'
+      }))
+      
       // 转换数据格式以适配表格显示
       searchResults.value = response.map((item: any) => {
         const rowData: any = {}
@@ -305,9 +305,8 @@ const handleSearch = async () => {
         return rowData
       })
       
-      console.log('API响应:', response)
-      console.log('搜索结果:', searchResults.value)
-      console.log('当前表格列:', tableColumns.value)
+      console.log('转换后的表格数据:', searchResults.value)
+      console.log('生成的表格列配置:', tableColumns.value)
       
       totalCount.value = searchResults.value.length
    
@@ -316,6 +315,11 @@ const handleSearch = async () => {
       } else {
         ElMessage.success(`找到 ${totalCount.value} 条记录`)
       }
+    } else {
+      searchResults.value = []
+      totalCount.value = 0
+      ElMessage.info('未找到匹配的数据')
+    }
   } catch (error: any) {
     ElMessage.error('搜索失败：' + (error.message || '未知错误'))
     console.error('Search error:', error)
@@ -501,6 +505,7 @@ onMounted(() => {
   gap: 15px;
   padding-top: 20px;
   border-top: 1px solid #e9ecef;
+  margin-left: 0px;
 }
 
 .search-btn {
@@ -542,6 +547,20 @@ onMounted(() => {
 }
 
 .results-table {
+  width: 100%;
+  overflow-x: auto;
+}
+
+/* 确保表格充分利用可用空间 */
+:deep(.el-table) {
+  width: 100% !important;
+}
+
+:deep(.el-table__body-wrapper) {
+  width: 100%;
+}
+
+:deep(.el-table__header-wrapper) {
   width: 100%;
 }
 

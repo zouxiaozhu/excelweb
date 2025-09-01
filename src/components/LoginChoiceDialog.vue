@@ -140,13 +140,7 @@ const handleExperienceLogin = async () => {
       emit('login-success')
       visible.value = false
       
-      // 显示体验账号提醒
-      ElMessage({
-        message: '体验账号数据仅用于测试，请及时删除测试数据',
-        type: 'warning',
-        duration: 5000,
-        showClose: true
-      })
+      // 体验账号提醒会通过全局组件自动显示
     } else {
       ElMessage.error(result.error || '体验账号登录失败')
     }

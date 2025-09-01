@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Data Transform Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        .test-section h3 {
+            margin-top: 0;
+            color: #333;
+        }
+
+        .data-display {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            table-layout: auto;
+        }
+
+        th,
+        td {
+            border: 1px solid #ddd;
+            padding: 8px 12px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        .success {
+            color: #28a745;
+            font-weight: bold;
+        }
+
+        .error {
+            color: #dc3545;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Search Data Transform Test</h1>
+        <p>测试searchRow API返回数据的转换逻辑</p>
+
+        <div class="test-section">
+            <h3>原始API数据</h3>
+            <div class="data-display" id="originalData"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>转换后的表格数据</h3>
+            <div class="data-display" id="transformedData"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>生成的表格列配置</h3>
+            <div class="data-display" id="tableColumns"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>渲染的表格</h3>
+            <div id="tableContainer"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>测试结果</h3>
+            <div id="testResults"></div>
+        </div>
+    </div>
+
+    <script>
+        // 模拟searchRow API返回的数据
+        const mockSearchResponse = [
+            {
+                "rowLine": 2,
+                "columnData": {
+                    "所在位置": {
+                        "id": 13650,
+                        "columnName": "所在位置",
+                        "columnValue": "所在位置(示例)"
+                    },
+                    "生产厂家": {
+                        "id": 13653,
+                        "columnName": "生产厂家",
+                        "columnValue": "生产厂家(示例)"
+                    },
+                    "负责人": {
+                        "id": 13655,
+                        "columnName": "负责人",
+                        "columnValue": "负责人(示例)"
+                    },
+                    "规格型号": {
+                        "id": 13652,
+                        "columnName": "规格型号",
+                        "columnValue": "规格型号(示例)"
+                    },
+                    "联系方式(数字)": {
+                        "id": 13656,
+                        "columnName": "联系方式(数字)",
+                        "columnValue": "1"
+                    },
+                    "编号": {
+                        "id": 13649,
+                        "columnName": "编号",
+                        "columnValue": "编号(示例)"
+                    },
+                    "器材名称": {
+                        "id": 13651,
+                        "columnName": "器材名称",
+                        "columnValue": "器材名称(示例)"
+                    },
+                    "有效期": {
+                        "id": 13654,
+                        "columnName": "有效期",
+                        "columnValue": "有效期(示例)"
+                    }
+                }
+            }
+        ];
+
+        // 显示原始数据
+        document.getElementById('originalData').textContent = JSON.stringify(mockSearchResponse, null, 2);
+
+        // 数据转换逻辑（与Vue组件中的逻辑一致）
+        function transformSearchData(response) {
+            if (response && response.length > 0) {
+                // 从第一条数据中获取列信息
+                const firstRow = response[0];
+                const columnData = firstRow.columnData;
+
+                console.log('API返回的原始数据:', response);
+                console.log('第一条数据的列信息:', columnData);
+
+                // 动态生成表格列配置
+                const tableColumns = Object.keys(columnData).map((columnKey, index) => ({
+                    prop: columnKey,
+                    label: columnData[columnKey].columnName,
+                    minWidth: '120'
+                }));
+
+                // 转换数据格式以适配表格显示
+                const searchResults = response.map((item) => {
+                    const rowData = {};
+                    Object.keys(item.columnData).forEach(columnKey => {
+                        rowData[columnKey] = item.columnData[columnKey].columnValue;
+                    });
+                    return rowData;
+                });
+
+                console.log('转换后的表格数据:', searchResults);
+                console.log('生成的表格列配置:', tableColumns);
+
+                return {
+                    searchResults,
+                    tableColumns,
+                    totalCount: searchResults.length
+                };
+            } else {
+                return {
+                    searchResults: [],
+                    tableColumns: [],
+                    totalCount: 0
+                };
+            }
+        }
+
+        // 执行转换
+        const result = transformSearchData(mockSearchResponse);
+
+        // 显示转换后的数据
+        document.getElementById('transformedData').textContent = JSON.stringify(result.searchResults, null, 2);
+        document.getElementById('tableColumns').textContent = JSON.stringify(result.tableColumns, null, 2);
+
+        // 渲染表格
+        function renderTable(searchResults, tableColumns) {
+            const container = document.getElementById('tableContainer');
+
+            if (searchResults.length === 0) {
+                container.innerHTML = '<p class="error">没有数据可显示</p>';
+                return;
+            }
+
+            let tableHTML = '<table>';
+
+            // 表头
+            tableHTML += '<thead><tr>';
+            tableColumns.forEach(column => {
+                tableHTML += `<th>${column.label}</th>`;
+            });
+            tableHTML += '</tr></thead>';
+
+            // 表体
+            tableHTML += '<tbody>';
+            searchResults.forEach(row => {
+                tableHTML += '<tr>';
+                tableColumns.forEach(column => {
+                    const value = row[column.prop] || '-';
+                    tableHTML += `<td>${value}</td>`;
+                });
+                tableHTML += '</tr>';
+            });
+            tableHTML += '</tbody>';
+
+            tableHTML += '</table>';
+
+            container.innerHTML = tableHTML;
+        }
+
+        // 渲染表格
+        renderTable(result.searchResults, result.tableColumns);
+
+        // 测试结果
+        function runTests() {
+            const results = [];
+
+            // 测试1: 数据转换是否成功
+            if (result.searchResults.length > 0) {
+                results.push('✅ 数据转换成功');
+            } else {
+                results.push('❌ 数据转换失败');
+            }
+
+            // 测试2: 表格列配置是否正确
+            if (result.tableColumns.length > 0) {
+                results.push('✅ 表格列配置生成成功');
+            } else {
+                results.push('❌ 表格列配置生成失败');
+            }
+
+            // 测试3: 数据完整性检查
+            const firstRow = result.searchResults[0];
+            if (firstRow) {
+                const expectedKeys = ['所在位置', '生产厂家', '负责人', '规格型号', '联系方式(数字)', '编号', '器材名称', '有效期'];
+                const actualKeys = Object.keys(firstRow);
+                const missingKeys = expectedKeys.filter(key => !actualKeys.includes(key));
+
+                if (missingKeys.length === 0) {
+                    results.push('✅ 数据完整性检查通过');
+                } else {
+                    results.push(`❌ 数据完整性检查失败，缺少字段: ${missingKeys.join(', ')}`);
+                }
+            }
+
+            // 测试4: 列名映射检查
+            const columnLabels = result.tableColumns.map(col => col.label);
+            const expectedLabels = ['所在位置', '生产厂家', '负责人', '规格型号', '联系方式(数字)', '编号', '器材名称', '有效期'];
+            const labelMatch = expectedLabels.every(label => columnLabels.includes(label));
+
+            if (labelMatch) {
+                results.push('✅ 列名映射正确');
+            } else {
+                results.push('❌ 列名映射错误');
+            }
+
+            return results;
+        }
+
+        // 显示测试结果
+        const testResults = runTests();
+        document.getElementById('testResults').innerHTML = testResults.map(result => `<p>${result}</p>`).join('');
+    </script>
+</body>
+
+</html>

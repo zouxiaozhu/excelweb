@@ -15,6 +15,7 @@ interface UserInfo {
     phone?: string
     bio?: string
     avatar?: string
+    isExperienceAccount?: boolean
 }
 
 interface TokenInfo {
@@ -82,8 +83,8 @@ export const useGlobalStore = defineStore('global', {
         },
 
         /**
-         * 设置用户登录状态
-         */
+ * 设置用户登录状态
+ */
         setLoginState(isLoggedIn: boolean, userInfo: UserInfo | null, token: string | null, isExperienceAccount: boolean) {
             this.isLoggedIn = isLoggedIn
             this.userInfo = userInfo
@@ -211,28 +212,35 @@ export const useGlobalStore = defineStore('global', {
 
             const token = localStorage.getItem('token')
             if (token) {
-                // 验证token并获取用户信息
-                const data = await authApiService.checkTokenAndGetUserInfo()
+                try {
+                    // 验证token并获取用户信息
+                    const data = await authApiService.checkTokenAndGetUserInfo()
 
-                const userInfo: UserInfo = {
-                    id: data.userInfo.userId.toString(),
-                    username: data.userInfo.userName,
-                    email: data.userInfo.email,
-                    nickName: data.userInfo.nickName,
-                    mobile: data.userInfo.mobile,
-                    phone: data.userInfo.phone,
-                    bio: data.userInfo.bio,
-                    avatar: data.userInfo.avatar,
+                    const userInfo: UserInfo = {
+                        id: data.userInfo.userId.toString(),
+                        username: data.userInfo.userName,
+                        email: data.userInfo.email,
+                        nickName: data.userInfo.nickName,
+                        mobile: data.userInfo.mobile,
+                        phone: data.userInfo.phone,
+                        bio: data.userInfo.bio,
+                        avatar: data.userInfo.avatar,
+                        isExperienceAccount: data.isExp
+                    }
+
+                    const tokneInfo: TokenInfo = {
+                        accessToken: data.tokenInfo.accessToken,
+                        tokenExpireTime: data.tokenInfo.tokenExpireTime,
+                        refreshTime: data.tokenInfo.refreshTime
+                    }
+
+                    const isExperienceAccount = data.isExp;
+                    this.setLoginState(true, userInfo, tokneInfo.accessToken, isExperienceAccount)
+                } catch (error) {
+                    console.error('Token验证失败，清理登录状态:', error)
+                    // 清理store中的登录状态
+                    this.logout()
                 }
-
-                const tokneInfo: TokenInfo = {
-                    accessToken: data.tokenInfo.accessToken,
-                    tokenExpireTime: data.tokenInfo.tokenExpireTime,
-                    refreshTime: data.tokenInfo.refreshTime
-                }
-
-                const isExperienceAccount = data.isExp;
-                this.setLoginState(true, userInfo, tokneInfo.accessToken, isExperienceAccount)
             } else {
                 this.logout()
             }

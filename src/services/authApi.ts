@@ -79,7 +79,20 @@ export const authApiService = {
      * 检查token并获取用户信息
      */
     async checkTokenAndGetUserInfo(): Promise<ApiResponse<LoginRegisterResponse>> {
-        return http.post(`${API_BASE_PATH}/checkTokenAndGetUserInfo`)
+        try {
+            return await http.post(`${API_BASE_PATH}/checkTokenAndGetUserInfo`)
+        } catch (error) {
+            // 检测到报错时直接清理当前登录态
+            console.error('Token验证失败，清理登录态:', error)
+
+            // 清理本地存储的登录信息
+            localStorage.removeItem('token')
+            localStorage.removeItem('userInfo')
+            localStorage.removeItem('isExperienceAccount')
+
+            // 重新抛出错误，让调用方知道验证失败
+            throw error
+        }
     },
 
     /**
