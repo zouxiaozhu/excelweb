@@ -153,6 +153,38 @@ export const excelApi = {
 }
 
 /**
+ * Excel转Word相关API
+ */
+export const excelToWordApi = {
+    /**
+     * 解析Excel表格
+     * @param params 解析参数
+     * @returns 解析结果
+     */
+    parseTable(params: {
+        bucket: string
+        engine: string
+        externalDomain: string
+        externalUrl: string
+        fileId: number
+        fileName: string
+        internalDomain: string
+        internalUrl: string
+        meta: any
+        path: string
+        size: number
+    }): Promise<ApiResponse<{
+        vars: Array<{
+            title: string
+            var: string
+        }>
+        path: string
+    }>> {
+        return http.post('/api/excel-to-word/parse-table', params)
+    }
+}
+
+/**
  * 导出所有API
  */
 export default {

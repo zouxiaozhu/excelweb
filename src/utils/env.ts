@@ -17,7 +17,7 @@ export const getEnvConfig = (): EnvConfig => {
     NODE_ENV: import.meta.env.NODE_ENV || 'development',
     VITE_APP_TITLE: import.meta.env.VITE_APP_TITLE || 'Excel Web',
     VITE_APP_VERSION: import.meta.env.VITE_APP_VERSION || '1.0.0',
-    VITE_API_BASE_URL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080',
+    VITE_API_BASE_URL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8901',
     VITE_API_TIMEOUT: parseInt(import.meta.env.VITE_API_TIMEOUT || '10000')
   }
 }
@@ -34,7 +34,7 @@ export const isProduction = (): boolean => {
 
 // 获取API基础URL
 export const getApiBaseUrl = (): string => {
-  return import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
+  return import.meta.env.VITE_API_BASE_URL || 'http://localhost:8901'
 }
 
 // 获取应用标题

@@ -167,3 +167,26 @@ export interface TaskFieldOption {
     label: string
     value: string
 }
+
+// Excel转Word相关类型定义
+export interface ExcelToWordParseParams {
+    bucket: string
+    engine: string
+    externalDomain: string
+    externalUrl: string
+    fileId: number
+    fileName: string
+    internalDomain: string
+    internalUrl: string
+    meta: any
+    path: string
+    size: number
+}
+
+export interface ExcelToWordParseResponse {
+    vars: Array<{
+        title: string
+        var: string
+    }>
+    path: string
+}

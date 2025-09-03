@@ -3,7 +3,7 @@
     "version": "1.0.0",
     "description": "Excel Web Application with Vue3 + Axios + ElementUI",
     "scripts": {
-        "dev": "vite --mode development",
+        "dev": "vite --mode development --port 5174",
         "prod": "vite --mode production",
         "build": "vite build --mode production",
         "build:dev": "vite build --mode development",
