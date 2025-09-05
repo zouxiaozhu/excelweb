@@ -181,6 +181,65 @@ export const excelToWordApi = {
         path: string
     }>> {
         return http.post('/api/excel-to-word/parse-table', params)
+    },
+
+    /**
+     * 开始转换任务
+     * @param params 转换参数
+     * @returns 转换结果
+     */
+    transfer(params: {
+        excel: FileUploadResponse
+        word: FileUploadResponse
+    }): Promise<ApiResponse<{
+        task: {
+            id: number
+            taskId: string
+            taskType: string
+            status: string
+            payload: any
+            result: any
+        }
+    }>> {
+        return http.post('/api/excel-to-word/transfer', params)
+    },
+
+    /**
+     * 查询任务进度
+     * @param params 查询参数
+     * @returns 任务进度
+     */
+    getTaskProgress(params: {
+        taskId: string
+        onlyTask?: boolean
+        excludeIds?: string
+    }): Promise<ApiResponse<{
+        transferTasks: Array<{
+            id: string
+            taskId: string
+            taskType: string
+            status: string
+            fileUrl: string
+            remark: string
+            errorMessage: string
+            createdAt: string
+            updatedAt: string
+        }>
+        commonTask: {
+            id: number
+            taskId: string
+            status: string
+            completeCount: number
+            exceptCount: number
+            result: {
+                zip_url: string
+                zipFileName: string
+                totalFiles: number
+                zip_success: boolean
+            }
+        }
+    }>> {
+        return http.get('/api/excel-to-word/task-process', { params })
     }
 }
 

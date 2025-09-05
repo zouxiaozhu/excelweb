@@ -623,6 +623,10 @@ onMounted(() => {
     flex-direction: column;
     align-items: center;
   }
+
+  .search-actions{
+    margin-left: 0px;
+  }
   
   .search-btn,
   .reset-btn {

@@ -162,6 +162,10 @@ const handleNormalLogin = () => {
 </script>
 
 <style scoped>
+
+.login-choice-dialog {
+  top: -20px;
+}
 .login-choice-dialog :deep(.el-dialog) {
   border-radius: 16px;
   overflow: hidden;

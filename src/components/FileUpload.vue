@@ -33,6 +33,30 @@
       <p class="progress-text">{{ progressText }}</p>
     </div>
     
+    <!-- 已上传文件列表 -->
+    <div v-if="showFileList && uploadedFiles.length > 0" class="uploaded-files">
+      <div 
+        v-for="file in uploadedFiles" 
+        :key="file.fileId"
+        class="uploaded-file-item"
+      >
+        <div class="file-info">
+          <el-icon class="file-icon"><Document /></el-icon>
+          <span class="file-name">{{ file.fileName }}</span>
+        </div>
+        <div class="file-actions">
+          <el-button 
+            type="danger" 
+            size="small" 
+            @click="removeFile(file.fileId)"
+            class="remove-btn"
+          >
+            删除
+          </el-button>
+        </div>
+      </div>
+    </div>
+    
     <!-- 重新上传按钮 -->
     <div v-if="showReupload" class="reupload-section">
       <el-button 
@@ -77,6 +101,7 @@ interface Props {
   maxSize?: number // MB
   disabled?: boolean
   businessType?: string // 业务类型
+  showFileList?: boolean // 是否显示已上传文件列表
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -84,7 +109,8 @@ const props = withDefaults(defineProps<Props>(), {
   multiple: false,
   maxSize: 10,
   disabled: false,
-  businessType: 'default'
+  businessType: 'default',
+  showFileList: true
 })
 
 // 定义组件事件
@@ -92,6 +118,7 @@ interface Emits {
   success: [response: any]
   error: [error: Error]
   progress: [percent: number]
+  remove: [fileId: string | number]
 }
 
 const emit = defineEmits<Emits>()
@@ -102,6 +129,7 @@ const uploading = ref(false)
 const uploadPercent = ref(0)
 const uploadStatus = ref<'success' | 'exception' | undefined>()
 const showReupload = ref(false)
+const uploadedFiles = ref<any[]>([])
 
 // 计算属性
 const uploadAction = computed(() => '#') // 使用自定义上传
@@ -163,6 +191,9 @@ const handleSuccess = (response: any, file: File) => {
   uploadPercent.value = 100
   uploadStatus.value = 'success'
   
+  // 替换已上传的文件（只保留一个文件）
+  uploadedFiles.value = [response]
+  
   ElMessage.success('文件上传成功！')
   emit('success', { response, file })
   
@@ -185,6 +216,17 @@ const handleError = (error: Error, file: File) => {
   
   console.error('Upload error:', error)
   emit('error', error)
+}
+
+/**
+ * 删除已上传的文件
+ */
+const removeFile = (fileId: string | number) => {
+  const fileIndex = uploadedFiles.value.findIndex(file => file.fileId === fileId)
+  if (fileIndex !== -1) {
+    uploadedFiles.value.splice(fileIndex, 1)
+    emit('remove', fileId)
+  }
 }
 
 /**
@@ -215,6 +257,8 @@ const handleUploadChange = (uploadFile: any) => {
 const handleReupload = () => {
   // 清空文件列表
   uploadRef.value?.clearFiles()
+  // 清空已上传文件列表
+  uploadedFiles.value = []
   // 隐藏重新上传按钮
   showReupload.value = false
   // 重置上传状态
@@ -256,6 +300,52 @@ defineExpose({
 .reupload-section {
   margin-top: 20px;
   text-align: center;
+}
+
+.uploaded-files {
+  margin-top: 20px;
+}
+
+.uploaded-file-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  background: white;
+  border: 1px solid #e4e7ed;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.file-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
+.file-icon {
+  color: #409eff;
+  font-size: 18px;
+}
+
+.file-name {
+  font-size: 14px;
+  color: #2c3e50;
+  font-weight: 500;
+  word-break: break-all;
+}
+
+.file-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.remove-btn {
+  font-size: 12px;
+  padding: 4px 8px;
+  height: auto;
 }
 
 :deep(.el-upload) {
