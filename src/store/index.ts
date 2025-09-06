@@ -180,12 +180,7 @@ export const useGlobalStore = defineStore('global', {
                     confirmPassword: confirmPassword,
                     nickName: nickName || username
                 })
-
-                if (response.code === 200) {
-                    return { success: true, message: response.data?.message || '注册成功' }
-                } else {
-                    throw new Error(response.message || '注册失败')
-                }
+                return { success: true, message: '注册成功' }
             } catch (error) {
                 console.error('用户注册错误:', error)
                 return { success: false, error: error.message || '注册失败' }

@@ -5,6 +5,7 @@
     width="400px"
     :close-on-click-modal="false"
     :close-on-press-escape="false"
+    append-to-body
     class="auth-modal"
   >
     <div class="auth-container">
@@ -404,7 +405,6 @@ const handleRegister = async () => {
   border-radius: 16px;
   overflow: hidden;
   margin-top: 50px !important;
-  z-index: 2000 !important;
 }
 
 .auth-modal :deep(.el-dialog__header) {
