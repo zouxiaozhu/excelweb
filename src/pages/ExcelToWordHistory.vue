@@ -168,13 +168,15 @@
     <el-dialog
       v-model="showDetailDialog"
       title="转换任务详情"
-      width="80%"
+      width="90%"
       :close-on-click-modal="false"
       class="detail-dialog"
+      top="2vh"
+      :modal="true"
     >
       <div v-if="selectedTask" class="task-detail-content">
-        <!-- 任务基本信息 -->
-        <div class="detail-section">
+        <!-- 任务基本信息 - 固定在顶部，不滚动 -->
+        <div class="detail-section task-info-section">
           <h3>任务信息</h3>
           <div class="detail-grid">
             <div class="detail-item">
@@ -206,19 +208,20 @@
           </div>
         </div>
 
-        <!-- 文件列表 -->
-        <div v-if="taskDetail && taskDetail.records && taskDetail.records.length > 0" class="detail-section">
+        <!-- 文件列表 - 可滚动区域 -->
+        <div v-if="taskDetail && taskDetail.records && taskDetail.records.length > 0" class="detail-section files-section">
           <div class="section-header">
             <h3>转换文件列表</h3>
           </div>
           
           <!-- 表格显示 -->
-          <el-table 
-            :data="taskDetail.records" 
-            border
-            style="width: 100%"
-            max-height="400"
-          >
+          <div class="table-container">
+            <el-table 
+              :data="taskDetail.records" 
+              border
+              style="width: 100%"
+              max-height="1200"
+            >
             <el-table-column label="文件名" min-width="200">
               <template #default="{ row }">
                 <div class="file-name-cell">
@@ -268,6 +271,7 @@
               </template>
             </el-table-column>
           </el-table>
+          </div>
           
           <!-- 分页 -->
           <div v-if="taskDetail.total > taskDetail.size" class="pagination-wrapper">
@@ -1021,15 +1025,45 @@ const loadTaskDetail = async () => {
 }
 
 /* 详情对话框样式 */
+.detail-dialog :deep(.el-dialog__body) {
+  padding: 20px;
+  overflow: hidden;
+}
+
 .detail-dialog {
   .task-detail-content {
-    max-height: 70vh;
-    overflow-y: auto;
+    height: 85vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  
+  .task-info-section {
+    flex-shrink: 0;
+    margin-bottom: 16px;
+  }
+  
+  .files-section {
+    flex: 1;
+    overflow: hidden;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .table-container {
+    flex: 1;
+    overflow: hidden;
+    min-height: 0;
   }
 }
 
 .detail-section {
   margin-bottom: 24px;
+}
+
+.detail-section.files-section {
+  margin-bottom: 0;
 }
 
 .detail-section h3 {

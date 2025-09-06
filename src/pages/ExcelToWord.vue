@@ -84,7 +84,7 @@
                     <div class="vars-list">
                       <el-card 
                         v-for="(variable, varIndex) in excelParseResults.vars" 
-                        :key="varIndex"
+                        :key="variable.var || variable.title || varIndex"
                         class="var-card"
                         shadow="hover"
                         @click="copyVariableCode(variable.var)"
@@ -107,6 +107,7 @@
                         :closable="false"
                         show-icon
                         class="parse-tip"
+                        style="grid-column: 1 / -1;"
                       >
                         <template #default>
                           <el-text type="info" size="small">点击变量卡片可复制代码到剪贴板</el-text>
@@ -144,7 +145,7 @@
                   </div>
                   <div class="convert-button-area">
                     <el-button 
-                      v-if="!hasCompletedTask"
+                      v-if="showStartButton"
                       type="primary" 
                       size="large"
                       :disabled="!canStartConversion"
@@ -159,11 +160,12 @@
                       v-else
                       type="success" 
                       size="large"
-                      @click="resetForNewConversion"
+                      :disabled="converting || !canStartConversion"
+                      @click="retryConversion"
                       class="convert-btn"
                     >
                       <el-icon><Refresh /></el-icon>
-                      开始新的转换
+                      再次转换
                     </el-button>
                   </div>
                 </div>
@@ -289,7 +291,7 @@
                 :status="conversionStatus"
                 :stroke-width="8"
                 :show-text="true"
-                :format="(percentage) => `${percentage}%`"
+                :format="formatProgress"
               />
               <el-text class="progress-text" type="info">{{ progressText }}</el-text>
             </div>
@@ -355,6 +357,10 @@ const converting = ref(false)
 const conversionProgress = ref(0)
 const conversionStatus = ref<'success' | 'exception' | undefined>()
 const progressText = ref('')
+const formatProgress = (percentage: number): string => `${percentage}%`
+// 记录最后一次转换使用的文件签名（用于判断是否变更）
+const lastExcelSignature = ref<string | null>(null)
+const lastWordSignature = ref<string | null>(null)
 // 转换任务列表（每个Word文件）
 const conversionResults = ref<{
   id: string,
@@ -406,6 +412,28 @@ const canStartConversion = computed(() => {
 // 计算属性 - 是否有已完成的任务
 const hasCompletedTask = computed(() => {
   return conversionMainResult.value?.status === 'SUCCESS' || conversionMainResult.value?.status === 'completed'
+})
+
+// 本次选择的文件签名
+const currentExcelSignature = computed(() => {
+  const file = uploadedExcelFiles.value[0]
+  if (!file) return null
+  return `${file.fileId}-${file.fileSize}-${file.fileName}`
+})
+
+const currentWordSignature = computed(() => {
+  const file = uploadedTemplateFile.value
+  if (!file) return null
+  return `${file.fileId}-${file.fileSize}-${file.fileName}`
+})
+
+// 是否显示“开始转换”按钮：未完成 或 文件有变化
+const showStartButton = computed(() => {
+  if (!hasCompletedTask.value) return true
+  // 已完成时，仅当文件发生变化才显示开始按钮，否则显示“再次转换”
+  const excelChanged = lastExcelSignature.value !== currentExcelSignature.value
+  const wordChanged = lastWordSignature.value !== currentWordSignature.value
+  return excelChanged || wordChanged
 })
 
 // 初始化体验账号提醒状态
@@ -608,6 +636,10 @@ const startTaskPolling = (taskId: string, _resultId: number) => {
         
         // 转换完成，重置转换按钮状态
         converting.value = false
+        if (conversionMainResult.value) {
+          conversionMainResult.value.status = 'SUCCESS'
+          conversionMainResult.value.taskStatus = 'SUCCESS'
+        }
         
         // 显示成功消息
         const successCount = commonTask.completeCount;
@@ -761,13 +793,28 @@ const parseExcelTable = async (fileResponse: FileUploadResponse) => {
   const result = await excelToWordApi.parseTable(params)
   console.log('解析结果:', result)
     // 保存解析结果
+    // 去重变量（依据 var 字段）
+    const seen = new Set<string>()
+    const normalize = (s: string | undefined) => (s || '').trim().toLowerCase()
+    const dedupedVars = (result.vars || [])
+      .map((v: { title: string; var: string }) => ({
+        title: (v?.title || '').trim(),
+        var: (v?.var || '').trim(),
+      }))
+      .filter((v: { title: string; var: string }) => {
+        const key = normalize(v.var) || `title:${normalize(v.title)}`
+        if (!key) return false
+        if (seen.has(key)) return false
+        seen.add(key)
+        return true
+      })
     excelParseResults.value = {
       fileName: fileResponse.fileName,
-      vars: result.vars,
+      vars: dedupedVars,
       path: result.path
     }
     
-    ElMessage.success(`Excel文件"${fileResponse.fileName}"解析成功，发现 ${result.vars.length} 个变量`)
+    ElMessage.success(`Excel文件"${fileResponse.fileName}"解析成功，发现 ${dedupedVars.length} 个变量`)
    
 }
 
@@ -873,6 +920,10 @@ const startConversion = async () => {
 
       ElMessage.success('转换任务已成功提交！')
       
+      // 记录当前文件签名作为最近一次转换的基线
+      lastExcelSignature.value = `${excelFile.fileId}-${excelFile.fileSize}-${excelFile.fileName}`
+      lastWordSignature.value = `${wordFile.fileId}-${wordFile.fileSize}-${wordFile.fileName}`
+
       // 开始轮询任务进度
       startTaskPolling(resultItem.taskId, conversionMainResult.value.id)
       
@@ -884,6 +935,12 @@ const startConversion = async () => {
     ElMessage.error('转换过程中出现错误：' + (error as Error).message)
     console.error('Conversion error:', error)
   }
+}
+
+// 再次转换（复用当前选择的文件）
+const retryConversion = async () => {
+  // 若用户更改了文件，按钮也会变成“开始转换”，这里复用start
+  await startConversion()
 }
 
 
@@ -993,7 +1050,6 @@ const goToHistoryPage = () => {
   border-radius: 12px;
   padding: 20px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
-  min-height: 400px;
 }
 
 .step-section {
@@ -1069,7 +1125,6 @@ const goToHistoryPage = () => {
   border-radius: 12px;
   padding: 20px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
-  min-height: 400px;
 }
 
 .result-header {
@@ -1104,7 +1159,7 @@ const goToHistoryPage = () => {
 
 .result-content {
   flex: 1;
-  overflow-y: auto;
+  overflow: visible;
 }
 
 .empty-result {
@@ -1134,8 +1189,8 @@ const goToHistoryPage = () => {
 }
 
 .result-list {
-  max-height: 500px;
-  overflow-y: auto;
+  max-height: none;
+  overflow: visible;
 }
 
 .result-item {
@@ -1380,7 +1435,7 @@ const goToHistoryPage = () => {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  max-height: 400px;
+  max-height: 700px;
   overflow-y: auto;
 }
 
@@ -1561,6 +1616,10 @@ const goToHistoryPage = () => {
     padding: 0 10px;
   }
   
+  .vars-list {
+    grid-template-columns: 1fr;
+  }
+  
   .left-panel,
   .right-panel {
     padding: 20px;
@@ -1685,11 +1744,11 @@ const goToHistoryPage = () => {
 }
 
 .vars-list {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
   max-height: 400px;
   overflow-y: auto;
-  gap: 12px;
 }
 
 .vars-list::-webkit-scrollbar {
@@ -1711,11 +1770,19 @@ const goToHistoryPage = () => {
 }
 
 .var-card {
-  transition: all 0.2s ease;
+  width: 100%;
+  transition: box-shadow 0.2s ease;
+}
+
+.var-card :deep(.el-card__header) {
+  padding: 8px 10px;
+}
+
+.var-card :deep(.el-card__body) {
+  padding: 8px 10px;
 }
 
 .var-card:hover {
-  transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
@@ -1725,7 +1792,7 @@ const goToHistoryPage = () => {
   gap: 8px;
   font-weight: 600;
   color: #2c3e50;
-  font-size: 14px;
+  font-size: 13px;
 }
 
 .var-code-wrapper {
@@ -1735,12 +1802,12 @@ const goToHistoryPage = () => {
   background: #f0f9ff;
   border: 1px solid #bae6fd;
   border-radius: 6px;
-  padding: 8px 12px;
+  padding: 6px 10px;
 }
 
 .var-code {
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 500;
 }
 
