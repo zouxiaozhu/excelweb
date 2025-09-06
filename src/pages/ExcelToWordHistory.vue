@@ -40,77 +40,7 @@
         <!-- 主要内容区域 -->
         <div class="main-content">
           <!-- 搜索和筛选 -->
-          <div class="search-section">
-            <div class="search-bar">
-              <el-input
-                v-model="searchKeyword"
-                placeholder="搜索文件名或任务ID"
-                clearable
-                @input="handleSearch"
-                class="search-input"
-              >
-                <template #prefix>
-                  <el-icon><Search /></el-icon>
-                </template>
-              </el-input>
-              <el-select
-                v-model="statusFilter"
-                placeholder="状态筛选"
-                clearable
-                @change="handleStatusFilter"
-                class="status-filter"
-              >
-                <el-option label="全部" value="" />
-                <el-option label="成功" value="SUCCESS" />
-                <el-option label="失败" value="FAILED" />
-                <el-option label="处理中" value="PROCESSING" />
-                <el-option label="等待中" value="PENDING" />
-              </el-select>
-              <el-select
-                v-model="sortField"
-                placeholder="排序字段"
-                @change="handleSortChange"
-                class="sort-field"
-              >
-                <el-option label="创建时间" value="createdAt" />
-                <el-option label="文件数量" value="fileCount" />
-              </el-select>
-              <el-select
-                v-model="sortOrder"
-                placeholder="排序方式"
-                @change="handleSortChange"
-                class="sort-order"
-              >
-                <el-option label="降序" value="desc" />
-                <el-option label="升序" value="asc" />
-              </el-select>
-            </div>
-            
-            <!-- 快速排序按钮 -->
-            <div class="quick-sort-buttons">
-              <div class="sort-info">
-                <el-text type="info" size="small">
-                  当前排序: {{ getSortDisplayText() }}
-                </el-text>
-              </div>
-              <el-button-group>
-                <el-button 
-                  :type="sortField === 'createdAt' && sortOrder === 'desc' ? 'primary' : 'default'"
-                  size="small"
-                  @click="setQuickSort('createdAt', 'desc')"
-                >
-                  最新创建
-                </el-button>
-                <el-button 
-                  :type="sortField === 'fileCount' && sortOrder === 'desc' ? 'primary' : 'default'"
-                  size="small"
-                  @click="setQuickSort('fileCount', 'desc')"
-                >
-                  文件最多
-                </el-button>
-              </el-button-group>
-            </div>
-          </div>
+        
 
           <!-- 历史记录列表 -->
           <div class="history-list">
@@ -280,7 +210,6 @@
         <div v-if="taskDetail && taskDetail.records && taskDetail.records.length > 0" class="detail-section">
           <div class="section-header">
             <h3>转换文件列表</h3>
-            <el-tag type="info" size="small">共{{ taskDetail.total }}个文件</el-tag>
           </div>
           
           <!-- 表格显示 -->
@@ -552,7 +481,7 @@ const handleCurrentChange = (page: number) => {
 
 // 获取任务显示名称
 const getTaskDisplayName = (task: ExcelToWordHistoryTask): string => {
-  return task.tableFileName || `转换任务_${task.taskId}`
+  return task.payload?.tableFileName || `转换任务_${task.taskId}`
 }
 
 // 格式化时间
@@ -808,13 +737,45 @@ const formatRemarkData = (remark: string): string => {
 }
 
 // 下载任务文件
-const downloadTaskFile = (record: any) => {
-  if (record.toObject) {
-    // 这里需要根据实际的下载逻辑来实现
-    // 可能需要调用下载API或直接使用文件路径
-    ElMessage.info('下载功能待实现')
-  } else {
-    ElMessage.warning('文件路径不可用')
+const downloadTaskFile = async (record: any) => {
+  try {
+    // 检查是否有外部下载链接
+    if (record.externalUrl) {
+      // 直接使用外部链接下载
+      const link = document.createElement('a')
+      link.href = record.externalUrl
+      link.download = getFileNameFromPath(record.toObject)
+      link.target = '_blank'
+      link.rel = 'noopener noreferrer'
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      ElMessage.success('开始下载文件')
+      return
+    }
+
+    // 如果没有外部链接，尝试从toObject路径构建下载链接
+    if (record.toObject) {
+      // 这里需要根据实际的文件服务配置来构建下载URL
+      // 假设文件服务的基础URL是 /api/files/download
+      const downloadUrl = `/api/files/download?path=${encodeURIComponent(record.toObject)}`
+      
+      // 创建下载链接
+      const link = document.createElement('a')
+      link.href = downloadUrl
+      link.download = getFileNameFromPath(record.toObject)
+      link.target = '_blank'
+      link.rel = 'noopener noreferrer'
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      ElMessage.success('开始下载文件')
+    } else {
+      ElMessage.warning('文件下载链接不可用')
+    }
+  } catch (error) {
+    console.error('下载文件失败:', error)
+    ElMessage.error('下载文件失败，请稍后重试')
   }
 }
 
