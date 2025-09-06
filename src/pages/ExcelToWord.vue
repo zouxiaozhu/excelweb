@@ -90,15 +90,15 @@
                         @click="copyVariableCode(variable.var)"
                         style="cursor: pointer;"
                       >
-                        <template #header>
-                          <div class="var-title">
+                        <div class="var-row">
+                          <div class="var-left">
                             <el-icon><Document /></el-icon>
-                            {{ variable.title }}
+                            <span class="var-title-text">{{ variable.title }}</span>
                           </div>
-                        </template>
-                        <div class="var-code-wrapper">
-                          <el-text type="primary" class="var-code">{{ variable.var }}</el-text>
-                          <el-icon class="copy-icon"><CopyDocument /></el-icon>
+                          <div class="var-right">
+                            <el-text type="primary" class="var-code">{{ variable.var }}</el-text>
+                            <el-icon class="copy-icon"><CopyDocument /></el-icon>
+                          </div>
                         </div>
                       </el-card>
                       <el-alert
@@ -1803,6 +1803,41 @@ const goToHistoryPage = () => {
   border: 1px solid #bae6fd;
   border-radius: 6px;
   padding: 6px 10px;
+}
+
+/* 单行布局 */
+.var-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.var-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.var-title-text {
+  font-weight: 600;
+  color: #2c3e50;
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.var-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: 6px;
+  padding: 4px 8px;
+  max-width: 60%;
 }
 
 .var-code {
