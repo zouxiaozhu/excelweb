@@ -137,7 +137,7 @@
                 class="history-table"
                 :row-class-name="getRowClassName"
               >
-                <el-table-column prop="payload.tableFileName" label="文件名" min-width="200">
+                <el-table-column prop="payload.tableFileName" label="文件名" min-width="200" align="left">
                   <template #default="{ row }">
                     <div class="file-name-cell">
                       <el-icon class="file-icon"><Document /></el-icon>
@@ -158,7 +158,7 @@
                   </template>
                 </el-table-column>
                 
-                <el-table-column label="文件统计" width="120" sortable="custom" :sort-orders="['ascending', 'descending']">
+                <el-table-column label="统计" width="120" sortable="custom" :sort-orders="['ascending', 'descending']">
                   <template #default="{ row }">
                     <div class="stats-cell">
                       <el-text size="small">{{ row.completeCount }}/{{ row.exceptCount }}</el-text>
@@ -166,7 +166,7 @@
                   </template>
                   <template #header>
                     <div class="sort-header">
-                      <span>文件统计</span>
+                      <span>统计</span>
                       <el-icon v-if="sortField === 'fileCount'" class="sort-icon">
                         <component :is="sortOrder === 'asc' ? 'SortUp' : 'SortDown'" />
                       </el-icon>
@@ -188,7 +188,7 @@
                   </template>
                 </el-table-column>
                 
-                <el-table-column label="操作" width="180" fixed="right">
+                <el-table-column label="操作" width="200" fixed="right">
                   <template #default="{ row }">
                     <div class="action-buttons">
                       <el-button 
@@ -277,37 +277,80 @@
         </div>
 
         <!-- 文件列表 -->
-        <div v-if="taskDetail && taskDetail.transferTasks && taskDetail.transferTasks.length > 0" class="detail-section">
-          <h3>转换文件列表</h3>
-          <div class="files-list">
-            <div 
-              v-for="file in taskDetail.transferTasks" 
-              :key="file.id"
-              class="file-item"
-              :class="getTaskStatusClass(file.status)"
-            >
-              <div class="file-info">
-                <el-icon class="file-icon"><Document /></el-icon>
-                <div class="file-details">
-                  <div class="file-name">{{ getTaskFileName(file) }}</div>
-                  <div class="file-status">{{ getTransferTaskStatusText(file.status) }}</div>
+        <div v-if="taskDetail && taskDetail.records && taskDetail.records.length > 0" class="detail-section">
+          <div class="section-header">
+            <h3>转换文件列表</h3>
+            <el-tag type="info" size="small">共{{ taskDetail.total }}个文件</el-tag>
+          </div>
+          
+          <!-- 表格显示 -->
+          <el-table 
+            :data="taskDetail.records" 
+            border
+            style="width: 100%"
+            max-height="400"
+          >
+            <el-table-column label="文件名" min-width="200">
+              <template #default="{ row }">
+                <div class="file-name-cell">
+                  <el-icon class="file-icon"><Document /></el-icon>
+                  <span class="file-name">{{ getFileNameFromPath(row.toObject) }}</span>
                 </div>
-              </div>
-              <div class="file-actions">
+              </template>
+            </el-table-column>
+            <el-table-column prop="status" label="状态" width="100">
+              <template #default="{ row }">
+                <el-tag 
+                  :type="getStatusTagType(row.status)"
+                  size="small"
+                >
+                  {{ getStatusText(row.status) }}
+                </el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column label="变量数据" min-width="200">
+              <template #default="{ row }">
+                <div class="remark-data">
+                  <el-text size="small" type="info">
+                    {{ formatRemarkData(row.remark) }}
+                  </el-text>
+                </div>
+              </template>
+            </el-table-column>
+            <el-table-column prop="createdAt" label="创建时间" width="160">
+              <template #default="{ row }">
+                <el-text size="small">{{ formatTime(row.createdAt) }}</el-text>
+              </template>
+            </el-table-column>
+            <el-table-column label="操作" width="120">
+              <template #default="{ row }">
                 <el-button 
-                  v-if="file.status === 'SUCCESS' && file.fileUrl"
+                  v-if="row.status === 'SUCCESS'"
                   type="primary" 
                   size="small"
-                  @click="downloadWordFile(file.fileUrl, file.id)"
-                  class="download-btn"
+                  @click="downloadTaskFile(row)"
                 >
+                  <el-icon><Download /></el-icon>
                   下载
                 </el-button>
-                <span v-if="file.status === 'FAILED' && file.errorMessage" class="error-message">
-                  {{ file.errorMessage }}
-                </span>
-              </div>
-            </div>
+                <el-text v-else-if="row.status === 'FAILED'" type="danger" size="small">
+                  {{ row.errorMessage || '转换失败' }}
+                </el-text>
+              </template>
+            </el-table-column>
+          </el-table>
+          
+          <!-- 分页 -->
+          <div v-if="taskDetail.total > taskDetail.size" class="pagination-wrapper">
+            <el-pagination
+              v-model:current-page="detailCurrentPage"
+              v-model:page-size="detailPageSize"
+              :total="taskDetail.total"
+              :page-sizes="[10, 20, 50]"
+              layout="total, sizes, prev, pager, next, jumper"
+              @size-change="handleDetailSizeChange"
+              @current-change="handleDetailCurrentChange"
+            />
           </div>
         </div>
       </div>
@@ -342,7 +385,7 @@ import { useGlobalStore } from '@/store'
 import AuthModal from '@/components/AuthModal.vue'
 import LoginChoiceDialog from '@/components/LoginChoiceDialog.vue'
 import { excelToWordApi } from '@/services/api'
-import type { ExcelToWordHistoryTask, ExcelToWordHistoryDetail, PageParams } from '@/typings/api'
+import type { ExcelToWordHistoryTask, ExcelToWordHistoryDetailPage, PageParams } from '@/typings/api'
 
 const router = useRouter()
 const globalStore = useGlobalStore()
@@ -372,7 +415,11 @@ const sortOrder = ref('desc')
 // 详情对话框
 const showDetailDialog = ref(false)
 const selectedTask = ref<ExcelToWordHistoryTask | null>(null)
-const taskDetail = ref<ExcelToWordHistoryDetail | null>(null)
+const taskDetail = ref<ExcelToWordHistoryDetailPage | null>(null)
+
+// 详情分页
+const detailCurrentPage = ref(1)
+const detailPageSize = ref(10)
 
 // 初始化体验账号提醒状态
 const initExperienceWarning = () => {
@@ -505,7 +552,7 @@ const handleCurrentChange = (page: number) => {
 
 // 获取任务显示名称
 const getTaskDisplayName = (task: ExcelToWordHistoryTask): string => {
-  return task.payload?.tableFileName || `转换任务_${task.taskId}`
+  return task.tableFileName || `转换任务_${task.taskId}`
 }
 
 // 格式化时间
@@ -582,10 +629,11 @@ const downloadZip = (task: ExcelToWordHistoryTask) => {
 const viewTaskDetail = async (task: ExcelToWordHistoryTask) => {
   selectedTask.value = task
   showDetailDialog.value = true
+  detailCurrentPage.value = 1
   
   try {
-    const response = await excelToWordApi.getHistoryDetail(task.taskId)
-    taskDetail.value = response.data
+    const response = await excelToWordApi.getHistoryDetailPage(task.taskId, detailCurrentPage.value - 1, detailPageSize.value)
+    taskDetail.value = response
   } catch (error) {
     console.error('获取任务详情失败:', error)
     ElMessage.error('获取任务详情失败')
@@ -730,6 +778,75 @@ const handleLoginSuccess = () => {
 const handleShowNormalLogin = () => {
   showAuthModal.value = true
 }
+
+// 从文件路径中提取文件名
+const getFileNameFromPath = (filePath: string): string => {
+  if (!filePath) return '未知文件'
+  const parts = filePath.split('/')
+  return parts[parts.length - 1] || '未知文件'
+}
+
+// 格式化变量数据
+const formatRemarkData = (remark: string): string => {
+  if (!remark) return '无数据'
+  try {
+    const data = JSON.parse(remark)
+    const entries = Object.entries(data)
+    if (entries.length === 0) return '无数据'
+    
+    // 只显示前3个字段，避免过长
+    const displayEntries = entries.slice(0, 3)
+    const formatted = displayEntries.map(([key, value]) => `${key}: ${value}`).join(', ')
+    
+    if (entries.length > 3) {
+      return formatted + `... (+${entries.length - 3}个字段)`
+    }
+    return formatted
+  } catch (error) {
+    return remark.length > 50 ? remark.substring(0, 50) + '...' : remark
+  }
+}
+
+// 下载任务文件
+const downloadTaskFile = (record: any) => {
+  if (record.toObject) {
+    // 这里需要根据实际的下载逻辑来实现
+    // 可能需要调用下载API或直接使用文件路径
+    ElMessage.info('下载功能待实现')
+  } else {
+    ElMessage.warning('文件路径不可用')
+  }
+}
+
+// 处理详情分页大小变化
+const handleDetailSizeChange = async (size: number) => {
+  detailPageSize.value = size
+  detailCurrentPage.value = 1
+  await loadTaskDetail()
+}
+
+// 处理详情当前页变化
+const handleDetailCurrentChange = async (page: number) => {
+  detailCurrentPage.value = page
+  await loadTaskDetail()
+}
+
+// 加载任务详情
+const loadTaskDetail = async () => {
+  if (!selectedTask.value) return
+  
+  try {
+    const response = await excelToWordApi.getHistoryDetailPage(
+      selectedTask.value.taskId, 
+      detailCurrentPage.value - 1, 
+      detailPageSize.value
+    )
+    taskDetail.value = response.data
+  } catch (error) {
+    console.error('加载任务详情失败:', error)
+    ElMessage.error('加载任务详情失败')
+  }
+}
 </script>
 
 <style scoped>
@@ -754,7 +871,7 @@ const handleShowNormalLogin = () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
   padding: 0 20px;
 }
@@ -780,7 +897,7 @@ const handleShowNormalLogin = () => {
 }
 
 .main-content {
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
   padding: 0 20px;
 }
@@ -1157,6 +1274,29 @@ const handleShowNormalLogin = () => {
   background: #f4f4f5;
   color: #909399;
   border-color: #909399;
+}
+
+/* 详情弹框样式 */
+.remark-data {
+  max-width: 200px;
+  word-break: break-all;
+  line-height: 1.4;
+}
+
+.file-name-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.file-name {
+  font-weight: 500;
+  color: #2c3e50;
+}
+
+.pagination-wrapper {
+  margin-top: 20px;
+  text-align: center;
 }
 
 @media (max-width: 768px) {

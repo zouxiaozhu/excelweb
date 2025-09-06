@@ -280,10 +280,16 @@ export const excelToWordApi = {
     /**
      * 获取历史转换记录详情
      * @param taskId 任务ID
+     * @param page 页码
+     * @param size 页大小
      * @returns 历史记录详情
      */
-    getHistoryDetail(taskId: string): Promise<ApiResponse<ExcelToWordHistoryDetail>> {
-        return http.get(`/api/excel-to-word/history/${taskId}`)
+    getHistoryDetailPage(taskId: string, page: number = 0, size: number = 10): Promise<ApiResponse<ExcelToWordHistoryDetailPage>> {
+        return http.post(`/api/excel-to-word/parseDetailPage`, {
+            page,
+            size,
+            taskId
+        })
     }
 }
 

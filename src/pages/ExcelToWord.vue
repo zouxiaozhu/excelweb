@@ -450,29 +450,14 @@ const getTaskFileName = (task: {
   remark?: string
   [key: string]: any
 }): string => {
-  try {
-    if (task.remark) {
-      const remarkData = JSON.parse(task.remark)
-      // 尝试从remark中获取有意义的字段作为文件名
-      // 优先使用常见的标识字段
-      const nameFields = ['姓名', '名称', '器材名称', '设备名称', '编号', 'ID']
-      for (const field of nameFields) {
-        if (remarkData[field]) {
-          return `${remarkData[field]}_${task.id}.docx`
-        }
-      }
-      // 如果没有找到特定字段，使用第一个非空值
-      const firstValue = Object.values(remarkData).find(value => value && value.toString().trim())
-      if (firstValue) {
-        return `${firstValue}_${task.id}.docx`
-      }
-    }
-  } catch (error) {
-    console.error('解析remark失败:', error)
-  }
+
+    
+var toObject=    task.toObject;
+const fileName = toObject.substring(toObject.lastIndexOf('/') + 1);
+  
   
   // 默认文件名
-  return `转换结果_${task.id}.docx`
+  return fileName;
 }
 
 /**

@@ -237,6 +237,35 @@ export interface ExcelToWordHistoryTask {
 }
 
 // Excel转Word历史记录详情
+// Excel转Word任务详情记录
+export interface ExcelToWordTaskRecord {
+    id: number
+    taskId: string
+    taskType: string
+    fromObject: string
+    fromBucket: string
+    toBucket: string
+    toObject: string
+    fromOssType: string
+    toOssType: string
+    status: string
+    result: string
+    remark: string
+    errorMessage: string
+    createdAt: string
+    updatedAt: string
+    userId: number
+}
+
+// Excel转Word历史详情分页响应
+export interface ExcelToWordHistoryDetailPage {
+    records: ExcelToWordTaskRecord[]
+    total: number
+    size: number
+    current: number
+    pages: number
+}
+
 export interface ExcelToWordHistoryDetail {
     commonTask: ExcelToWordHistoryTask
     transferTasks: Array<{
