@@ -6,6 +6,8 @@
     :close-on-click-modal="false"
     :close-on-press-escape="false"
     class="login-choice-dialog"
+    :center="true"
+    :align-center="true"
   >
     <div class="choice-container">
       <!-- 体验账号登录选项 -->
@@ -163,12 +165,24 @@ const handleNormalLogin = () => {
 
 <style scoped>
 
-.login-choice-dialog {
-  top: -20px;
-}
 .login-choice-dialog :deep(.el-dialog) {
   border-radius: 16px;
   overflow: hidden;
+  max-height: 64vh !important;
+  height: auto !important;
+  display: flex;
+  flex-direction: column;
+  margin: 0 auto;
+  position: relative;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.login-choice-dialog :deep(.el-dialog__wrapper) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
 }
 
 .login-choice-dialog :deep(.el-dialog__header) {
@@ -184,18 +198,20 @@ const handleNormalLogin = () => {
 
 .login-choice-dialog :deep(.el-dialog__body) {
   padding: 0 24px 24px;
+  flex: 1;
+  overflow-y: auto;
 }
 
 .choice-container {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 16px;
 }
 
 .choice-card {
   background: #f8f9fa;
   border-radius: 12px;
-  padding: 24px;
+  padding: 20px;
   border: 2px solid transparent;
   transition: all 0.3s ease;
   cursor: pointer;
@@ -212,7 +228,7 @@ const handleNormalLogin = () => {
   display: flex;
   align-items: center;
   gap: 16px;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
 .choice-icon {
@@ -252,20 +268,20 @@ const handleNormalLogin = () => {
 }
 
 .choice-content {
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 
 .choice-content p {
   color: #606266;
-  line-height: 1.6;
-  margin-bottom: 16px;
+  line-height: 1.4;
+  margin-bottom: 12px;
 }
 
 .warning-box {
   background: #fff3cd;
   border: 1px solid #ffeaa7;
   border-radius: 8px;
-  padding: 12px;
+  padding: 10px;
   display: flex;
   gap: 8px;
   align-items: flex-start;
@@ -353,8 +369,22 @@ const handleNormalLogin = () => {
 /* 响应式设计 */
 @media (max-width: 768px) {
   .login-choice-dialog :deep(.el-dialog) {
-    width: 90% !important;
-    margin: 20px auto;
+    width: 95% !important;
+    max-width: 400px;
+    margin: 0;
+    max-height: 68vh;
+  }
+  
+  .login-choice-dialog :deep(.el-dialog__wrapper) {
+    padding: 0;
+  }
+  
+  .login-choice-dialog :deep(.el-dialog__header) {
+    padding: 16px 16px 0;
+  }
+  
+  .login-choice-dialog :deep(.el-dialog__body) {
+    padding: 0 16px 16px;
   }
   
   .choice-container {
@@ -380,6 +410,96 @@ const handleNormalLogin = () => {
   
   .choice-title h3 {
     font-size: 16px;
+  }
+  
+  .choice-content p {
+    font-size: 14px;
+    margin-bottom: 12px;
+  }
+  
+  .warning-box {
+    padding: 10px;
+  }
+  
+  .warning-content ul {
+    font-size: 12px;
+  }
+  
+  .benefit-item {
+    font-size: 13px;
+  }
+  
+  .choice-footer .el-button {
+    min-width: 100px;
+    height: 36px;
+  }
+}
+
+@media (max-width: 480px) {
+  .login-choice-dialog :deep(.el-dialog) {
+    width: 98% !important;
+    max-height: 64vh;
+  }
+  
+  .login-choice-dialog :deep(.el-dialog__wrapper) {
+    padding: 0;
+  }
+  
+  .choice-container {
+    gap: 12px;
+  }
+  
+  .choice-card {
+    padding: 12px;
+  }
+  
+  .choice-header {
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  
+  .choice-icon {
+    width: 36px;
+    height: 36px;
+  }
+  
+  .choice-icon .el-icon {
+    font-size: 18px;
+  }
+  
+  .choice-title h3 {
+    font-size: 15px;
+  }
+  
+  .choice-subtitle {
+    font-size: 13px;
+  }
+  
+  .choice-content p {
+    font-size: 13px;
+    margin-bottom: 10px;
+  }
+  
+  .warning-box {
+    padding: 8px;
+  }
+  
+  .warning-content strong {
+    font-size: 13px;
+  }
+  
+  .warning-content ul {
+    font-size: 11px;
+  }
+  
+  .benefit-item {
+    font-size: 12px;
+  }
+  
+  .choice-footer .el-button {
+    min-width: 90px;
+    height: 32px;
+    font-size: 14px;
   }
 }
 </style>

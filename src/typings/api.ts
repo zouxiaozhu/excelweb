@@ -19,6 +19,14 @@ export interface FileUploadResponse {
     fileSize: number
     uploadTime: string
     sizeText?: string
+    // Excel转Word所需的额外属性
+    bucket?: string
+    engine?: string
+    externalDomain?: string
+    externalUrl?: string
+    internalDomain?: string
+    internalUrl?: string
+    path?: string
 }
 
 // 文件信息响应
@@ -33,6 +41,7 @@ export interface FileInfoResponse {
 
 // Excel解析响应
 export interface ExcelParseResponse {
+    id?: string
     taskId: string
     status: 'pending' | 'processing' | 'completed' | 'failed'
     message: string
@@ -87,6 +96,7 @@ export interface ExcelParseTask {
     extendData?: ExcelParseExtendData
     startTime?: string
     endTime?: string
+    fileCoding?: string
 }
 
 // 任务状态映射
@@ -189,4 +199,59 @@ export interface ExcelToWordParseResponse {
         var: string
     }>
     path: string
+}
+
+// Excel转Word历史记录任务
+export interface ExcelToWordHistoryTask {
+    id: number
+    taskId: string
+    taskType: string
+    status: string
+    completeCount: number
+    exceptCount: number
+    createdAt: string
+    updatedAt: string
+    payload: {
+        tableFileExtension: string
+        tableFileName: string
+        wordVars: string[]
+        ossType: string
+        wordPath: string
+        storagePath: string
+        wordFileName: string
+        tablePath: string
+    }
+    result: {
+        has_zip_count: number
+        zip_end: boolean
+        completedAt: string
+        zipFileName: string
+        zip_text: string
+        zip_success: boolean
+        zip_path: string
+        need_zip_count: number
+        totalFiles: number
+        zipFile: string
+        zip_url: string
+    }
+}
+
+// Excel转Word历史记录详情
+export interface ExcelToWordHistoryDetail {
+    commonTask: ExcelToWordHistoryTask
+    transferTasks: Array<{
+        id: string
+        taskId: string
+        taskType: string
+        fromObject: string
+        toObject: string
+        fromOssType: string
+        toOssType: string
+        status: string
+        fileUrl: string
+        remark: string
+        errorMessage: string
+        createdAt: string
+        updatedAt: string
+    }>
 }

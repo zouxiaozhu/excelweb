@@ -13,6 +13,11 @@
             <router-link to="/excel-query" class="nav-item">表格快查</router-link>
             <router-link to="/excel-to-word" class="nav-item">Excel转Word</router-link>
           </nav>
+          
+          <!-- 移动端汉堡菜单 -->
+          <div class="mobile-menu-toggle" @click="toggleMobileMenu">
+            <el-icon class="menu-icon"><Menu /></el-icon>
+          </div>
         </div>
 
         <!-- 右侧：用户状态 -->
@@ -61,6 +66,24 @@
       </div>
     </div>
 
+    <!-- 移动端菜单 -->
+    <div v-if="showMobileMenu" class="mobile-menu">
+      <div class="mobile-menu-content">
+        <router-link to="/" class="mobile-nav-item" @click="closeMobileMenu">
+          <el-icon><HomeFilled /></el-icon>
+          首页
+        </router-link>
+        <router-link to="/excel-query" class="mobile-nav-item" @click="closeMobileMenu">
+          <el-icon><Document /></el-icon>
+          表格快查
+        </router-link>
+        <router-link to="/excel-to-word" class="mobile-nav-item" @click="closeMobileMenu">
+          <el-icon><Document /></el-icon>
+          Excel转Word
+        </router-link>
+      </div>
+    </div>
+
   </header>
 
   <!-- 二合一登录注册弹框 -->
@@ -71,7 +94,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
@@ -79,7 +102,9 @@ import {
   User,
   ArrowDown,
   SwitchButton,
-  Warning
+  Warning,
+  Menu,
+  HomeFilled
 } from '@element-plus/icons-vue'
 import { useGlobalStore } from '@/store'
 import AuthModal from './AuthModal.vue'
@@ -89,6 +114,7 @@ const globalStore = useGlobalStore()
 
 // 响应式数据
 const showAuthModal = ref(false)
+const showMobileMenu = ref(false)
 
 // 计算属性 - 从全局状态获取登录信息
 const isLoggedIn = computed(() => globalStore.isLoggedIn)
@@ -148,6 +174,40 @@ const handleUserCommand = (command: string) => {
       break
   }
 }
+
+/**
+ * 切换移动端菜单显示状态
+ */
+const toggleMobileMenu = () => {
+  showMobileMenu.value = !showMobileMenu.value
+}
+
+/**
+ * 关闭移动端菜单
+ */
+const closeMobileMenu = () => {
+  showMobileMenu.value = false
+}
+
+/**
+ * 处理点击外部区域关闭菜单
+ */
+const handleClickOutside = (event: Event) => {
+  const target = event.target as HTMLElement
+  if (showMobileMenu.value && !target.closest('.mobile-menu') && !target.closest('.mobile-menu-toggle')) {
+    closeMobileMenu()
+  }
+}
+
+// 组件挂载时添加事件监听
+onMounted(() => {
+  document.addEventListener('click', handleClickOutside)
+})
+
+// 组件卸载时移除事件监听
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside)
+})
 </script>
 
 <style scoped>
@@ -275,6 +335,76 @@ const handleUserCommand = (command: string) => {
   color: #c0c4cc;
 }
 
+/* 移动端菜单样式 */
+.mobile-menu-toggle {
+  display: none;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 4px;
+  transition: background-color 0.3s ease;
+}
+
+.mobile-menu-toggle:hover {
+  background-color: #f5f7fa;
+}
+
+.menu-icon {
+  font-size: 18px;
+  color: #606266;
+}
+
+.mobile-menu {
+  position: fixed;
+  top: 60px;
+  left: 0;
+  right: 0;
+  background: white;
+  border-bottom: 1px solid #e4e7ed;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  z-index: 1001;
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.mobile-menu-content {
+  padding: 16px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mobile-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  color: #606266;
+  text-decoration: none;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+  font-weight: 500;
+}
+
+.mobile-nav-item:hover {
+  color: #409eff;
+  background-color: #f0f9ff;
+}
+
+.mobile-nav-item.router-link-active {
+  color: #409eff;
+  background-color: #f0f9ff;
+}
+
 /* 响应式设计 */
 @media (max-width: 768px) {
   .container {
@@ -287,6 +417,10 @@ const handleUserCommand = (command: string) => {
   
   .nav-menu {
     display: none;
+  }
+  
+  .mobile-menu-toggle {
+    display: block;
   }
   
   .username {

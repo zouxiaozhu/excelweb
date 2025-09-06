@@ -10,7 +10,7 @@
         @close="handleCloseExperienceWarning"
       >
         <template #default>
-          <p>您正在使用体验账号，数据仅用于测试，请勿上传重要数据。数据会定期清理，建议使用自己的账号登录。</p>
+                                    <el-text type="warning" size="small">您正在使用体验账号，数据仅用于测试，请勿上传重要数据。数据会定期清理，建议使用自己的账号登录。</el-text>
         </template>
       </el-alert>
     </div>
@@ -19,15 +19,29 @@
       <div class="page-container">
         <!-- 页面头部 -->
         <div class="page-header">
-          <h1>Excel转Word工具</h1>
-          <p>批量将Excel数据填充到Word模板中,支持变量替换</p>
+          <div class="header-content">
+            <div class="title-section">
+              <h1>Excel转Word工具</h1>
+              <el-text type="info" size="default">批量将Excel数据填充到Word模板中,支持变量替换</el-text>
+            </div>
+            <div class="header-actions">
+              <el-button 
+                type="default" 
+                @click="goToHistoryPage"
+                class="history-btn"
+              >
+                <el-icon><Clock /></el-icon>
+                历史记录
+              </el-button>
+            </div>
+          </div>
         </div>
 
         <!-- 主要内容区域 -->
         <div class="main-content">
           <el-row :gutter="40">
             <!-- 左侧：上传和操作步骤 -->
-            <el-col :span="12">
+            <el-col :span="14">
               <div class="left-panel">
                 <!-- 步骤1：上传Excel文件 -->
                 <div class="step-section">
@@ -48,62 +62,56 @@
                     />
                   </div>
                   
-                  <!-- 显示已上传的Excel文件 -->
-                  <div v-if="uploadedExcelFiles.length > 0" class="uploaded-files">
-                    <h4>已上传的Excel文件</h4>
-                    <div class="file-item">
-                      <span class="file-name">{{ uploadedExcelFiles[0].fileName }}</span>
-                      <el-button 
-                        type="danger" 
-                        size="small" 
-                        @click="removeExcelFile()"
-                        class="remove-file-btn"
-                      >
-                        删除
-                      </el-button>
-                    </div>
-                  </div>
-                  
                   <!-- 显示解析的变量 -->
                   <div v-if="excelParseResults" class="parse-results">
                     <div class="parse-results-header">
                       <h4>Excel变量列表</h4>
                       <div class="header-actions">
-                        <div class="total-count">
+                        <el-tag type="success" size="small">
                           共{{ getTotalVarsCount() }}个
-                        </div>
+                        </el-tag>
                         <el-button 
                           type="danger" 
                           size="small" 
                           @click="clearAllParseResults"
                           class="clear-btn"
                         >
+                          <el-icon><Delete /></el-icon>
                           清除
                         </el-button>
                       </div>
                     </div>
                     <div class="vars-list">
-                      <div class="var-group">
-                        <div class="vars-grid">
-                          <div 
-                            v-for="(variable, varIndex) in excelParseResults.vars" 
-                            :key="varIndex"
-                            class="var-item"
-                            @click="copyVariableCode(variable.var)"
-                            title="点击变量可复制代码"
-                          >
-                            <span class="var-title">{{ variable.title }}</span>
-                            <div class="var-code-wrapper">
-                              <span class="var-code">{{ variable.var }}</span>
-                              <el-icon class="copy-icon"><Document /></el-icon>
-                            </div>
+                      <el-card 
+                        v-for="(variable, varIndex) in excelParseResults.vars" 
+                        :key="varIndex"
+                        class="var-card"
+                        shadow="hover"
+                        @click="copyVariableCode(variable.var)"
+                        style="cursor: pointer;"
+                      >
+                        <template #header>
+                          <div class="var-title">
+                            <el-icon><Document /></el-icon>
+                            {{ variable.title }}
                           </div>
+                        </template>
+                        <div class="var-code-wrapper">
+                          <el-text type="primary" class="var-code">{{ variable.var }}</el-text>
+                          <el-icon class="copy-icon"><CopyDocument /></el-icon>
                         </div>
-                        <div class="parse-tip">
-                          <el-icon><Document /></el-icon>
-                          <span>点击变量可复制代码</span>
-                        </div>
-                      </div>
+                      </el-card>
+                      <el-alert
+                        title="使用提示"
+                        type="info"
+                        :closable="false"
+                        show-icon
+                        class="parse-tip"
+                      >
+                        <template #default>
+                          <el-text type="info" size="small">点击变量卡片可复制代码到剪贴板</el-text>
+                        </template>
+                      </el-alert>
                     </div>
                   </div>
                 </div>
@@ -125,9 +133,6 @@
                       @error="handleUploadError"
                       @remove="handleTemplateFileRemove"
                     />
-                    <div class="upload-tip">
-                      仅支持.docx格式,文件大小不超过10MB
-                    </div>
                   </div>
                 </div>
 
@@ -147,6 +152,7 @@
                       @click="startConversion"
                       class="convert-btn"
                     >
+                      <el-icon v-if="!converting"><VideoPlay /></el-icon>
                       {{ converting ? '转换中...' : '开始转换' }}
                     </el-button>
                     <el-button 
@@ -156,7 +162,8 @@
                       @click="resetForNewConversion"
                       class="convert-btn"
                     >
-                      再次转换
+                      <el-icon><Refresh /></el-icon>
+                      开始新的转换
                     </el-button>
                   </div>
                 </div>
@@ -164,103 +171,100 @@
             </el-col>
 
             <!-- 右侧：转换结果 -->
-            <el-col :span="12">
+            <el-col :span="10">
               <div class="right-panel">
                 <div class="result-header">
                   <h3>转换结果</h3>
-                  <el-button 
-                    v-if="getCompressionDownloadUrl()"
-                    type="primary" 
-                    size="small"
-                    @click="downloadCompressionPackage"
-                    class="header-batch-download-btn"
-                  >
-                    批量下载
-                  </el-button>
+                  
                 </div>
                 <div class="result-content">
-                  <div v-if="conversionResults.length === 0" class="empty-result">
+                  <div v-if="!conversionMainResult && conversionResults.length === 0" class="empty-result">
                     <div class="empty-icon">
                       <el-icon size="60"><Box /></el-icon>
                     </div>
-                    <p class="empty-text">暂无转换结果</p>
+                    <el-text type="info" size="large">暂无转换结果</el-text>
                   </div>
                   <div v-else class="result-list">
-                    <!-- 压缩包状态显示 -->
-                    <div v-if="getCompressionStatus()" class="compression-status">
-                      <div class="status-icon">
-                        <el-icon class="success-icon"><CircleCheck /></el-icon>
+                    <!-- 第一块：压缩包状态和进度 -->
+                    <div v-if="conversionMainResult" class="compression-section">
+                      <div class="section-header">
+                        <h4>压缩包状态</h4>
+                        <el-tag type="info" size="small">共{{ getTotalFileCount() }}个文件</el-tag>
                       </div>
-                      <div class="status-content">
-                        <div class="status-text">{{ getCompressionStatusText() }}</div>
-                        <div class="file-count">共{{ getTotalFileCount() }}个文件</div>
-                      </div>
-                      <div class="status-actions">
-                        <el-button 
-                          type="warning" 
-                          size="small"
-                          @click="resetAllTasks"
-                          class="reset-task-btn"
-                        >
-                          重置任务
-                        </el-button>
+                      
+                      <div class="compression-status">
+                        <div class="status-icon">
+                          <el-icon class="success-icon"><CircleCheck /></el-icon>
+                        </div>
+                        <div class="status-content">
+                          <el-text class="status-text" type="primary">{{ getCompressionStatusText() }}</el-text>
+                          <div class="progress-info">
+                            <el-text type="info" size="small">
+                              进度: {{ conversionMainResult.completeCount }}/{{ conversionMainResult.exceptCount }}
+                            </el-text>
+                          </div>
+                        </div>
+                        <div class="status-actions">
+                          <el-button 
+                            v-if="getCompressionDownloadUrl()"
+                            type="primary" 
+                            size="small"
+                            @click="downloadCompressionPackage"
+                            class="header-batch-download-btn"
+                          >
+                            <el-icon><Download /></el-icon>
+                            批量下载
+                          </el-button>
+                        </div>
                       </div>
                     </div>
                     
-                    <div 
-                      v-for="(result, index) in conversionResults" 
-                      :key="index"
-                      class="result-item"
-                    >
-                      <div class="result-info">
-                        <el-icon class="result-icon"><Document /></el-icon>
-                        <div class="result-details">
-                          <div class="result-name">{{ result.fileName }}</div>
-                                                  <div class="result-meta">
-                          <!-- 显示各个Word文件的转换状态 -->
-                          <div v-if="result.transferTasks && result.transferTasks.length > 0" class="transfer-tasks-status">
-                            <div 
-                              v-for="task in result.transferTasks" 
-                              :key="task.id"
-                              class="task-status-item"
-                              :class="getTaskStatusClass(task.status)"
-                            >
-                              <span class="task-status-text">{{ getTransferTaskStatusText(task.status) }}</span>
-                              <!-- 成功且有URL时显示下载按钮 -->
-                              <el-button 
-                                  type="primary" 
-                                  size="small"
-                                  @click="downloadWordFile(task.fileUrl, task.id)"
-                                  class="word-download-btn"
-                                >
-                                  下载
-                                </el-button>
-                              <!-- 失败时显示错误信息 -->
-                              <span v-if="task.status === 'FAILED' && task.errorMessage" class="task-error">
-                                {{ task.errorMessage }}
-                              </span>
+                    <!-- 第二块：转换的每一个Word文件 -->
+                    <div v-if="conversionResults.length > 0" class="files-section">
+                      <div class="section-header">
+                        <h4>转换文件列表</h4>
+                        <el-tag type="info" size="small">{{ conversionResults.length }}个文件</el-tag>
+                      </div>
+                      
+                      <div class="files-list">
+                        <div 
+                          v-for="task in conversionResults" 
+                          :key="task.id"
+                          class="file-item"
+                          :class="getTaskStatusClass(task.status)"
+                        >
+                          <div class="file-info">
+                            <el-icon class="file-icon"><Document /></el-icon>
+                            <div class="file-details">
+                              <div class="file-name">{{ getTaskFileName(task) }}</div>
+                              <el-text v-if="getTransferTaskStatusText(task.status)" type="info" size="small">
+                                {{ getTransferTaskStatusText(task.status) }}
+                              </el-text>
                             </div>
                           </div>
+                          <div class="file-actions">
+                            <!-- 成功且有URL时显示下载按钮 -->
+                            <el-button 
+                                v-if="task.status === 'SUCCESS' && task.fileUrl"
+                                type="primary" 
+                                size="small"
+                                @click="downloadWordFile(task.fileUrl, task.id)"
+                                class="download-btn"
+                              >
+                                <el-icon><Download /></el-icon>
+                                下载
+                              </el-button>
+                            <!-- 失败时显示错误信息 -->
+                            <el-alert
+                              v-if="task.status === 'FAILED' && task.errorMessage"
+                              :title="task.errorMessage"
+                              type="error"
+                              :closable="false"
+                              show-icon
+                              class="error-alert"
+                            />
+                          </div>
                         </div>
-                        </div>
-                      </div>
-                      <div class="result-actions">
-                        <el-button 
-                          v-if="result.status === 'failed'"
-                          type="danger" 
-                          size="small"
-                          @click="showError(result)"
-                        >
-                          查看错误
-                        </el-button>
-                        <el-button 
-                          v-else-if="result.status !== 'completed'"
-                          type="info" 
-                          size="small"
-                          disabled
-                        >
-                          {{ getStatusText(result.status, result.taskStatus) }}
-                        </el-button>
                       </div>
                     </div>
                   </div>
@@ -272,14 +276,22 @@
 
         <!-- 转换进度 -->
         <div v-if="converting" class="conversion-progress">
-          <el-card>
+          <el-card shadow="always">
+            <template #header>
+              <div class="progress-header">
+                <el-icon class="progress-icon"><Loading /></el-icon>
+                <span>转换进度</span>
+              </div>
+            </template>
             <div class="progress-content">
               <el-progress 
                 :percentage="conversionProgress" 
                 :status="conversionStatus"
                 :stroke-width="8"
+                :show-text="true"
+                :format="(percentage) => `${percentage}%`"
               />
-              <p class="progress-text">{{ progressText }}</p>
+              <el-text class="progress-text" type="info">{{ progressText }}</el-text>
             </div>
           </el-card>
         </div>
@@ -311,9 +323,9 @@
  * @reference https://www.deskwork.cn/admin/document-convert/new
  */
 
-import { ref, reactive, onMounted, computed, watch, nextTick } from 'vue'
+import { ref, onMounted, computed, watch, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
-import { Document, Box, CircleCheck, Download } from '@element-plus/icons-vue'
+import { Document, Box, CircleCheck, Clock, Delete, CopyDocument, Loading, VideoPlay, Refresh, Download } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import FileUpload from '@/components/FileUpload.vue'
 import { useGlobalStore } from '@/store'
@@ -343,7 +355,41 @@ const converting = ref(false)
 const conversionProgress = ref(0)
 const conversionStatus = ref<'success' | 'exception' | undefined>()
 const progressText = ref('')
-const conversionResults = ref<any[]>([])
+// 转换任务列表（每个Word文件）
+const conversionResults = ref<{
+  id: string,
+  taskId: string,
+  taskType: string,
+  fromObject: string,
+  toObject: string,
+  fromOssType: string,
+  toOssType: string,
+  status: string,
+  fileUrl: string,
+  remark: string,
+  errorMessage: string,
+  createdAt: string,
+  updatedAt: string
+}[]>([])
+
+// 主要转换结果（压缩包、状态等）
+const conversionMainResult = ref<{
+  id: number,
+  remark: string,
+  taskId: string,
+  exceptCount: number,
+  completeCount: number,
+  status: string,
+  payload: any,
+  result: any,
+  fileName: string,
+  zipUrl: string,
+  zipText: string,
+  zipFileName: string,
+  createTime: string,
+  taskStatus: string
+} | null>(null)
+
 
 // Excel解析结果
 const excelParseResults = ref<{
@@ -359,7 +405,7 @@ const canStartConversion = computed(() => {
 
 // 计算属性 - 是否有已完成的任务
 const hasCompletedTask = computed(() => {
-  return conversionResults.value.some(result => result.status === 'completed')
+  return conversionMainResult.value?.status === 'SUCCESS' || conversionMainResult.value?.status === 'completed'
 })
 
 // 初始化体验账号提醒状态
@@ -376,33 +422,7 @@ const handleCloseExperienceWarning = () => {
   localStorage.setItem('hideExperienceWarning', 'true')
 }
 
-/**
- * 格式化时间
- */
-const formatTime = (time: string): string => {
-  return new Date(time).toLocaleString()
-}
 
-/**
- * 获取状态文本
- */
-const getStatusText = (status: string, taskStatus?: string): string => {
-  if (status === 'submitted') {
-    switch (taskStatus) {
-      case 'PENDING':
-        return '任务待处理'
-      case 'PROCESSING':
-        return '正在转换'
-      case 'SUCCESS':
-        return '转换完成'
-      case 'FAILED':
-        return '转换失败'
-      default:
-        return '任务已提交'
-    }
-  }
-  return '未知状态'
-}
 
 /**
  * 获取Word文件转换状态文本
@@ -423,6 +443,39 @@ const getTransferTaskStatusText = (status: string): string => {
 }
 
 /**
+ * 获取任务文件名
+ */
+const getTaskFileName = (task: {
+  id: string
+  remark?: string
+  [key: string]: any
+}): string => {
+  try {
+    if (task.remark) {
+      const remarkData = JSON.parse(task.remark)
+      // 尝试从remark中获取有意义的字段作为文件名
+      // 优先使用常见的标识字段
+      const nameFields = ['姓名', '名称', '器材名称', '设备名称', '编号', 'ID']
+      for (const field of nameFields) {
+        if (remarkData[field]) {
+          return `${remarkData[field]}_${task.id}.docx`
+        }
+      }
+      // 如果没有找到特定字段，使用第一个非空值
+      const firstValue = Object.values(remarkData).find(value => value && value.toString().trim())
+      if (firstValue) {
+        return `${firstValue}_${task.id}.docx`
+      }
+    }
+  } catch (error) {
+    console.error('解析remark失败:', error)
+  }
+  
+  // 默认文件名
+  return `转换结果_${task.id}.docx`
+}
+
+/**
  * 获取Word文件状态样式类
  */
 const getTaskStatusClass = (status: string): string => {
@@ -440,20 +493,13 @@ const getTaskStatusClass = (status: string): string => {
   }
 }
 
-/**
- * 获取压缩包状态
- */
-const getCompressionStatus = (): boolean => {
-  return conversionResults.value.some(result => result.status === 'completed')
-}
 
 /**
  * 获取压缩包状态文本
  */
 const getCompressionStatusText = (): string => {
-  const completedResult = conversionResults.value.find(result => result.status === 'completed')
-  if (completedResult && completedResult.zipText) {
-    return completedResult.zipText
+  if (conversionMainResult.value?.zipText) {
+    return conversionMainResult.value.zipText
   }
   return '压缩包已生成,可批量下载'
 }
@@ -462,19 +508,14 @@ const getCompressionStatusText = (): string => {
  * 获取压缩包下载链接
  */
 const getCompressionDownloadUrl = (): string => {
-  const completedResult = conversionResults.value.find(result => result.status === 'completed')
-  return completedResult?.zipUrl || ''
+  return conversionMainResult.value?.zipUrl || ''
 }
 
 /**
  * 获取总文件数量
  */
 const getTotalFileCount = (): number => {
-  const completedResult = conversionResults.value.find(result => result.status === 'completed')
-  if (completedResult && completedResult.transferTasks) {
-    return completedResult.transferTasks.length
-  }
-  return 0
+  return conversionResults.value.length
 }
 
 /**
@@ -496,24 +537,6 @@ const downloadCompressionPackage = () => {
   }
 }
 
-/**
- * 重置所有任务
- */
-const resetAllTasks = () => {
-  ElMessageBox.confirm(
-    '确定要重置所有任务吗？这将清除所有转换结果。',
-    '确认重置',
-    {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning',
-    }
-  ).then(() => {
-    resetForNewConversion()
-  }).catch(() => {
-    // 用户取消
-  })
-}
 
 /**
  * 下载Word文件
@@ -532,7 +555,7 @@ const downloadWordFile = (fileUrl: string, taskId: string) => {
 /**
  * 开始轮询任务进度
  */
-const startTaskPolling = (taskId: string, resultId: number) => {
+const startTaskPolling = (taskId: string, _resultId: number) => {
   const pollInterval = setInterval(async () => {
     try {
       const response = await excelToWordApi.getTaskProgress({
@@ -541,77 +564,76 @@ const startTaskPolling = (taskId: string, resultId: number) => {
         excludeIds: ''
       })
 
-        const { commonTask, transferTasks } = response
-        // 更新转换结果状态
-        const resultIndex = conversionResults.value.findIndex(item => item.id === resultId)
-        if (resultIndex !== -1) {
-          const result = conversionResults.value[resultIndex]
-          
-          // 更新任务状态
-          result.taskStatus = commonTask.status
-          
-          // 更新transferTasks状态
-          result.transferTasks = transferTasks
-          
-          // 更新进度文案
-          if (commonTask.result && commonTask.result.zip_text) {
-            progressText.value = commonTask.result.zip_text
-            result.zipText = commonTask.result.zip_text
-          }
-          
-          // 检查转换任务状态
-          const isTransferSuccess = commonTask.status === 'SUCCESS'
-          
-          // 检查压缩打包是否完成
-          const isZipCompleted = commonTask.result.zip_end === true
-          
-          // 如果转换任务成功且压缩打包完成，更新下载信息
-          if (isTransferSuccess && commonTask.result.zip_success && isZipCompleted) {
-            result.zipUrl = commonTask.result.zip_url
-            result.zipFileName = commonTask.result.zipFileName
-            result.status = 'completed'
-            result.zipText = commonTask.result.zip_text
-            
-            // 停止轮询
-            clearInterval(pollInterval)
-            
-            // 更新进度条状态
-            conversionProgress.value = 100
-            conversionStatus.value = 'success'
-            progressText.value = '转换完成！'
-            
-            // 转换完成，重置转换按钮状态
-            converting.value = false
-            
-            ElMessage.success('转换任务已完成！')
-          } else if (commonTask.result.status === 'FAILED') {
-            result.status = 'failed'
-            // 从transferTasks中获取错误信息
-            const failedTask = transferTasks.find(task => task.status === 'FAILED')
-            result.errorMessage = failedTask?.errorMessage || '转换失败'
-            
-            // 停止轮询
-            clearInterval(pollInterval)
-            
-            // 更新进度条状态
-            conversionStatus.value = 'exception'
-            progressText.value = '转换失败！'
-            
-            // 转换失败，重置转换按钮状态
-            converting.value = false
-            
-            ElMessage.error('转换任务失败！')
-          } else {
-            // 更新进度：completeCount是已完成数量，exceptCount是总数
-            const progress = Math.round((commonTask.completeCount / commonTask.exceptCount) * 100)
-            conversionProgress.value = Math.min(progress, 90) // 保留10%给完成状态
-            progressText.value = `正在转换... ${commonTask.completeCount}/${commonTask.exceptCount}`
-            
-            // 如果压缩打包完成但任务状态还不是SUCCESS，继续轮询直到状态更新
-            if (isZipCompleted) {
-              progressText.value = '压缩打包完成，等待任务状态更新...'
-            }
-          }
+      const { transferTasks, commonTask } = response
+      // 更新转换任务列表
+      if (transferTasks && transferTasks.length > 0) {
+        console.log('更新transferTasks:', transferTasks)
+        // 更新conversionResults数组
+        conversionResults.value = transferTasks
+        
+        // 计算进度
+        const successCount = commonTask.completeCount;
+        const totalCount = commonTask.exceptCount;
+        
+        if (conversionMainResult.value) {
+          conversionMainResult.value.completeCount = successCount;
+        }
+      
+        conversionProgress.value = Math.floor((successCount / totalCount) * 100)
+        
+        // 更新进度文本
+        if (commonTask.status === 'PROCESSING' || commonTask.status === 'PENDING') {
+          progressText.value = `正在转换中... (${successCount}/${totalCount})`
+        }
+        
+        console.log('转换进度:', successCount, '/', totalCount, '=', conversionProgress.value)
+      }
+      
+      var zipText = "";
+      var zipUrl = "";
+      var zipFileName = "";
+              // 更新压缩包信息
+      if (commonTask.result && conversionMainResult.value) {
+        if (commonTask.result.zip_text) {
+          progressText.value = commonTask.result.zip_text
+          zipText = commonTask.result.zip_text
+          conversionMainResult.value.zipText = zipText;
+        }
+        
+        if (commonTask.result.zip_url) {
+          zipUrl = commonTask.result.zip_url
+          progressText.value = "压缩包已生成,可批量下载"
+          conversionMainResult.value.zipUrl = zipUrl;
+        }
+        
+        if (commonTask.result.zipFileName) {
+          zipFileName = commonTask.result.zipFileName
+          conversionMainResult.value.zipFileName = zipFileName;
+        }
+      }
+      
+      // 检查任务是否完成
+      if (commonTask.status === 'SUCCESS') {
+        // 停止轮询
+        clearInterval(pollInterval)
+        // 更新进度条状态
+        conversionProgress.value = 100
+        conversionStatus.value = 'success'
+        progressText.value = '转换完成！'
+        
+        // 转换完成，重置转换按钮状态
+        converting.value = false
+        
+        // 显示成功消息
+        const successCount = commonTask.completeCount;
+        ElMessage.success(`转换任务已完成！共生成 ${successCount} 个文件`)
+      } else if (commonTask.status === 'FAILED') {
+        // 任务失败
+        clearInterval(pollInterval)
+        conversionStatus.value = 'exception'
+        progressText.value = '转换失败！'
+        converting.value = false
+        ElMessage.error('转换任务失败，请重试')
       }
     } catch (error) {
       console.error('轮询任务进度失败:', error)
@@ -620,10 +642,7 @@ const startTaskPolling = (taskId: string, resultId: number) => {
   }, 2000) // 每2秒轮询一次
   
   // 存储轮询定时器，以便后续可以停止
-  const resultIndex = conversionResults.value.findIndex(item => item.id === resultId)
-  if (resultIndex !== -1) {
-    conversionResults.value[resultIndex].pollInterval = pollInterval
-  }
+  // 注意：由于数据结构改变，这里不再需要存储pollInterval到数组中
 }
 
 /**
@@ -669,46 +688,21 @@ const clearAllParseResults = () => {
     
     excelParseResults.value = null
     uploadedExcelFiles.value = []
+    conversionResults.value = []
+    conversionMainResult.value = null
     ElMessage.success('已清除文件和解析结果')
   }).catch(() => {
     // 用户取消
   })
 }
 
-/**
- * 删除Excel文件
- */
-const removeExcelFile = () => {
-  ElMessageBox.confirm(
-    '确定要删除此Excel文件吗？删除后将无法恢复。',
-    '确认删除',
-    {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning',
-    }
-  ).then(() => {
-    // 清除文件列表
-    uploadedExcelFiles.value = []
-    
-    // 清除解析结果
-    excelParseResults.value = null
-    
-    ElMessage.success('文件已删除')
-  }).catch(() => {
-    // 用户取消
-  })
-}
 
 /**
  * 清理所有轮询定时器
  */
 const clearAllPolling = () => {
-  conversionResults.value.forEach(result => {
-    if (result.pollInterval) {
-      clearInterval(result.pollInterval)
-    }
-  })
+  // 由于数据结构改变，这里不再需要清理轮询定时器
+  // 轮询定时器会在任务完成或失败时自动清理
 }
 
 /**
@@ -732,6 +726,7 @@ const resetForNewConversion = () => {
     uploadedExcelFiles.value = []
     uploadedTemplateFile.value = null
     conversionResults.value = []
+    conversionMainResult.value = null
     conversionProgress.value = 0
     conversionStatus.value = undefined
     progressText.value = ''
@@ -765,14 +760,14 @@ const handleExcelUploadSuccess = async ({ response }: { response: FileUploadResp
  */
 const parseExcelTable = async (fileResponse: FileUploadResponse) => {
   const params = {
-    bucket: fileResponse.bucket,
-    engine: fileResponse.engine,
-    externalDomain: fileResponse.externalDomain,
+    bucket: fileResponse.bucket || "",
+    engine: fileResponse.engine || "",
+    externalDomain: fileResponse.externalDomain || "",
     externalUrl: fileResponse.externalUrl || "",
     fileId: parseInt(fileResponse.fileId),
     fileName: fileResponse.fileName,
-    internalDomain:fileResponse.internalDomain,
-    internalUrl: fileResponse.internalUrl,
+    internalDomain: fileResponse.internalDomain || "",
+    internalUrl: fileResponse.internalUrl || "",
     meta: null,
     path: fileResponse.path || "",
     size: fileResponse.fileSize
@@ -810,7 +805,7 @@ const handleUploadError = (error: Error) => {
 /**
  * 处理Excel文件删除
  */
-const handleExcelFileRemove = (fileId: string | number) => {
+const handleExcelFileRemove = (_fileId: string | number) => {
   // 清除文件列表
   uploadedExcelFiles.value = []
   // 清除解析结果
@@ -821,7 +816,7 @@ const handleExcelFileRemove = (fileId: string | number) => {
 /**
  * 处理Word模板文件删除
  */
-const handleTemplateFileRemove = (fileId: string | number) => {
+const handleTemplateFileRemove = (_fileId: string | number) => {
   // 清除模板文件
   uploadedTemplateFile.value = null
   ElMessage.success('Word模板已删除')
@@ -858,13 +853,12 @@ const startConversion = async () => {
       word: wordFile
     })
 
-      conversionProgress.value = 100
-      conversionStatus.value = 'success'
+      conversionProgress.value = 30
+      conversionStatus.value = undefined
       progressText.value = '转换任务已提交！'
       
       // 添加到转换结果
       const resultItem = {
-        id: response.task.id,
         fileName: excelFile.fileName,
         status: 'submitted',
         createTime: new Date().toISOString(),
@@ -875,76 +869,41 @@ const startConversion = async () => {
         transferTasks: [], // 存储各个Word文件的转换状态
         zipText: ''
       }
-      
-      conversionResults.value.unshift(resultItem)
+      conversionMainResult.value = {
+        id: response.task.id,
+        fileName: excelFile.fileName,
+        status: response.task.status,
+        exceptCount: response.task.exceptCount || 0,
+        completeCount: 0,
+        payload: response.task.payload,
+        result: response.task.result,
+        remark: '',
+        taskId: response.task.taskId,
+        zipUrl: '',
+        zipText: '',
+        zipFileName: '',
+        createTime: new Date().toISOString(),
+        taskStatus: response.task.status
+      }
 
       ElMessage.success('转换任务已成功提交！')
       
       // 开始轮询任务进度
-      startTaskPolling(resultItem.taskId, resultItem.id)
+      startTaskPolling(resultItem.taskId, conversionMainResult.value.id)
+      
+      // 注意：不在这里设置 converting.value = false，让轮询函数来控制转换状态
   } catch (error) {
     conversionStatus.value = 'exception'
     progressText.value = '转换失败！'
+    converting.value = false // 只有在出错时才重置转换状态
     ElMessage.error('转换过程中出现错误：' + (error as Error).message)
     console.error('Conversion error:', error)
-  } finally {
-    converting.value = false
   }
 }
 
 
 
-/**
- * 下载转换结果
- */
-const downloadResult = (result: any) => {
-  if (result.zipUrl) {
-    // 创建下载链接
-    const link = document.createElement('a')
-    link.href = result.zipUrl
-    link.download = result.zipFileName || '转换结果.zip'
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    
-    ElMessage.success(`开始下载 ${result.zipFileName}`)
-  } else {
-    ElMessage.warning('下载链接不可用')
-  }
-  console.log('下载任务:', result.taskId, '下载链接:', result.zipUrl)
-}
 
-/**
- * 批量下载转换结果
- */
-const downloadBatchResult = (result: any) => {
-  if (result.zipUrl) {
-    // 创建下载链接
-    const link = document.createElement('a')
-    link.href = result.zipUrl
-    link.download = result.zipFileName || '批量转换结果.zip'
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    
-    ElMessage.success(`开始批量下载 ${result.zipFileName}`)
-  } else {
-    ElMessage.warning('批量下载链接不可用')
-  }
-  console.log('批量下载任务:', result.taskId, '下载链接:', result.zipUrl)
-}
-
-/**
- * 显示错误信息
- */
-const showError = (result: any) => {
-  ElMessageBox.alert(
-    result.errorMessage || '转换过程中发生未知错误',
-    '错误详情',
-    { type: 'error' }
-  )
-  console.log('错误详情:', result)
-}
 
 // 组件挂载时检查登录状态
 onMounted(() => {
@@ -981,6 +940,13 @@ const handleLoginSuccess = () => {
 const handleShowNormalLogin = () => {
   showAuthModal.value = true
 }
+
+/**
+ * 跳转到历史记录页面
+ */
+const goToHistoryPage = () => {
+  router.push('/excel-to-word-history')
+}
 </script>
 
 <style scoped>
@@ -997,22 +963,37 @@ const handleShowNormalLogin = () => {
 }
 
 .page-header {
-  text-align: center;
-  margin-bottom: 40px;
-  padding: 40px 0;
+  margin-bottom: 20px;
+  padding: 20px 0;
 }
 
-.page-header h1 {
-  font-size: 36px;
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.title-section h1 {
+  font-size: 32px;
   color: #2c3e50;
-  margin: 0 0 15px;
+  margin: 0 0 8px;
   font-weight: 600;
 }
 
-.page-header p {
+.title-section p {
   color: #7f8c8d;
-  font-size: 18px;
+  font-size: 16px;
   margin: 0;
+}
+
+.history-btn {
+  height: 40px;
+  padding: 0 20px;
+  font-weight: 500;
+  border-radius: 8px;
 }
 
 .main-content {
@@ -1025,13 +1006,13 @@ const handleShowNormalLogin = () => {
 .right-panel {
   background: white;
   border-radius: 12px;
-  padding: 30px;
+  padding: 20px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
-  min-height: 600px;
+  min-height: 400px;
 }
 
 .step-section {
-  margin-bottom: 40px;
+  margin-bottom: 24px;
 }
 
 .step-section:last-child {
@@ -1041,34 +1022,34 @@ const handleShowNormalLogin = () => {
 .step-header {
   display: flex;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 12px;
 }
 
 .step-number {
-  width: 40px;
-  height: 40px;
+  width: 32px;
+  height: 32px;
   background: #409eff;
   color: white;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 18px;
+  font-size: 16px;
   font-weight: bold;
-  margin-right: 15px;
+  margin-right: 12px;
 }
 
 .step-header h3 {
   margin: 0;
   color: #2c3e50;
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 500;
 }
 
 .upload-area {
   border: 2px dashed #e4e7ed;
   border-radius: 8px;
-  padding: 30px;
+  padding: 20px;
   text-align: center;
   background: #fafafa;
   transition: all 0.3s;
@@ -1099,21 +1080,26 @@ const handleShowNormalLogin = () => {
 }
 
 .right-panel {
-  display: flex;
-  flex-direction: column;
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  min-height: 400px;
 }
 
 .result-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 30px;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e4e7ed;
 }
 
 .result-header h3 {
   margin: 0;
   color: #2c3e50;
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 500;
 }
 
@@ -1121,6 +1107,14 @@ const handleShowNormalLogin = () => {
   background: #409eff;
   border-color: #409eff;
   font-weight: 500;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.header-batch-download-btn:hover {
+  background: #337ecc;
+  border-color: #337ecc;
 }
 
 .result-content {
@@ -1133,18 +1127,25 @@ const handleShowNormalLogin = () => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 100%;
-  color: #909399;
+  height: 200px;
+  color: #64748b;
+  background: white;
+  border-radius: 12px;
+  border: 2px dashed #cbd5e1;
+  margin: 20px 0;
 }
 
 .empty-icon {
-  margin-bottom: 20px;
-  opacity: 0.6;
+  margin-bottom: 16px;
+  opacity: 0.7;
+  color: #94a3b8;
 }
 
 .empty-text {
   font-size: 16px;
   margin: 0;
+  font-weight: 500;
+  color: #64748b;
 }
 
 .result-list {
@@ -1205,10 +1206,31 @@ const handleShowNormalLogin = () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 4px 8px;
-  margin-bottom: 4px;
-  border-radius: 4px;
-  font-size: 11px;
+  padding: 8px 12px;
+  margin-bottom: 6px;
+  border-radius: 6px;
+  font-size: 12px;
+}
+
+.task-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.task-file-name {
+  font-weight: 600;
+  color: #2c3e50;
+  font-size: 13px;
+  word-break: break-word;
+}
+
+.task-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
 }
 
 .task-status-item.status-success {
@@ -1272,45 +1294,72 @@ const handleShowNormalLogin = () => {
 }
 
 /* 压缩包状态样式 */
+.compression-section {
+  margin-bottom: 24px;
+  background: #f9f9f9;
+  border: 1px solid #ebeef5;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.section-header h4 {
+  margin: 0;
+  color: #333;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.file-count, .files-count {
+  background: #67c23a;
+  color: white;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
 .compression-status {
   display: flex;
   align-items: center;
-  padding: 16px 20px;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
+  padding: 15px;
+  background: white;
+  border: 1px solid #e4e7ed;
   border-radius: 8px;
-  margin-bottom: 20px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  margin-bottom: 10px;
+}
+
+.progress-info {
+  margin-top: 4px;
+  font-size: 12px;
+  color: #909399;
 }
 
 .status-icon {
-  margin-right: 16px;
-  margin-top: 2px;
+  margin-right: 12px;
+  color: #67c23a;
+  font-size: 20px;
 }
 
 .success-icon {
-  font-size: 24px;
-  color: #10b981;
+  font-size: 20px;
+  color: #67c23a;
 }
 
 .status-content {
   flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
 }
 
 .status-text {
-  font-size: 16px;
-  font-weight: 600;
-  color: #1e293b;
-  margin: 0;
-}
-
-.file-count {
   font-size: 14px;
-  color: #64748b;
   font-weight: 500;
+  color: #2c3e50;
   margin: 0;
 }
 
@@ -1333,6 +1382,146 @@ const handleShowNormalLogin = () => {
   margin-left: auto;
 }
 
+/* 文件列表样式 */
+.files-section {
+  margin-bottom: 24px;
+  background: #f9f9f9;
+  border: 1px solid #ebeef5;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.files-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.files-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.files-list::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.files-list::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+.files-list::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+.file-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 15px;
+  border: 1px solid #e4e7ed;
+  border-radius: 6px;
+  background: white;
+  transition: all 0.2s ease;
+}
+
+.file-item:hover {
+  border-color: #409eff;
+  box-shadow: 0 2px 8px rgba(64, 158, 255, 0.1);
+}
+
+.file-info {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  gap: 12px;
+}
+
+.file-icon {
+  color: #409eff;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.file-details {
+  flex: 1;
+  min-width: 0;
+}
+
+.file-name {
+  font-weight: 500;
+  color: #2c3e50;
+  font-size: 14px;
+  margin-bottom: 4px;
+  word-break: break-word;
+  line-height: 1.4;
+}
+
+.file-status {
+  font-size: 12px;
+  color: #909399;
+}
+
+.file-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.download-btn {
+  font-size: 12px;
+  padding: 6px 12px;
+  height: auto;
+  border-radius: 4px;
+  font-weight: 500;
+  background: #409eff;
+  border-color: #409eff;
+}
+
+.download-btn:hover {
+  background: #337ecc;
+  border-color: #337ecc;
+}
+
+.error-alert {
+  max-width: 200px;
+  font-size: 11px;
+}
+
+.error-alert :deep(.el-alert__content) {
+  padding: 0;
+}
+
+.error-alert :deep(.el-alert__title) {
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+/* 文件状态样式 */
+.file-item.status-success {
+  border-color: #67c23a;
+  background: #f0f9ff;
+}
+
+.file-item.status-failed {
+  border-color: #f56c6c;
+  background: #fef0f0;
+}
+
+.file-item.status-processing {
+  border-color: #e6a23c;
+  background: #fdf6ec;
+}
+
+.file-item.status-pending {
+  border-color: #909399;
+  background: #f4f4f5;
+}
+
 .reset-task-btn {
   background: #f59e0b;
   border-color: #f59e0b;
@@ -1350,6 +1539,28 @@ const handleShowNormalLogin = () => {
   padding: 0 20px;
 }
 
+.progress-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.progress-icon {
+  color: #409eff;
+  animation: rotate 2s linear infinite;
+}
+
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .progress-content {
   text-align: center;
   padding: 20px;
@@ -1357,7 +1568,6 @@ const handleShowNormalLogin = () => {
 
 .progress-text {
   margin-top: 15px;
-  color: #666;
   font-size: 14px;
 }
 
@@ -1373,11 +1583,24 @@ const handleShowNormalLogin = () => {
     margin-bottom: 20px;
   }
   
-  .page-header h1 {
+  /* 移动端时恢复等宽布局 */
+  .el-col {
+    width: 100% !important;
+    flex: 0 0 100% !important;
+    max-width: 100% !important;
+  }
+  
+  .header-content {
+    flex-direction: column;
+    gap: 16px;
+    align-items: stretch;
+  }
+  
+  .title-section h1 {
     font-size: 28px;
   }
   
-  .page-header p {
+  .title-section p {
     font-size: 16px;
   }
   
@@ -1440,8 +1663,8 @@ const handleShowNormalLogin = () => {
 
 /* 解析变量结果样式 */
 .parse-results {
-  margin-top: 20px;
-  padding: 20px;
+  margin-top: 12px;
+  padding: 16px;
   background: #f9f9f9;
   border: 1px solid #ebeef5;
   border-radius: 8px;
@@ -1451,7 +1674,7 @@ const handleShowNormalLogin = () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 12px;
 }
 
 .header-actions {
@@ -1481,7 +1704,7 @@ const handleShowNormalLogin = () => {
   flex-direction: column;
   max-height: 400px;
   overflow-y: auto;
-  gap: 0;
+  gap: 12px;
 }
 
 .vars-list::-webkit-scrollbar {
@@ -1502,65 +1725,22 @@ const handleShowNormalLogin = () => {
   background: #a8a8a8;
 }
 
-/* 确保滚动条不影响布局 */
-.vars-list {
-  scrollbar-width: thin;
-  scrollbar-color: #c1c1c1 #f1f1f1;
-}
-
-.var-group {
-  margin-bottom: 20px;
-  padding-bottom: 15px;
-  border-bottom: 1px dashed #eee;
-  flex-shrink: 0;
-}
-
-.var-group:last-child {
-  border-bottom: none;
-  margin-bottom: 0;
-  padding-bottom: 0;
-}
-
-
-
-.remove-file-btn {
-  font-size: 12px;
-  padding: 4px 8px;
-  height: auto;
-}
-
-.vars-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 12px;
-  margin-bottom: 15px;
-}
-
-.var-item {
-  background: white;
-  border: 1px solid #e4e7ed;
-  border-radius: 8px;
-  padding: 12px;
-  font-size: 14px;
-  color: #333;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  cursor: pointer;
+.var-card {
   transition: all 0.2s ease;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
-.var-item:hover {
-  border-color: #409eff;
-  box-shadow: 0 4px 8px rgba(64, 158, 255, 0.15);
-  transform: translateY(-1px);
+.var-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .var-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-weight: 600;
   color: #2c3e50;
-  font-size: 15px;
+  font-size: 14px;
 }
 
 .var-code-wrapper {
@@ -1570,12 +1750,11 @@ const handleShowNormalLogin = () => {
   background: #f0f9ff;
   border: 1px solid #bae6fd;
   border-radius: 6px;
-  padding: 8px 10px;
+  padding: 8px 12px;
 }
 
 .var-code {
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-  color: #0369a1;
   font-size: 13px;
   font-weight: 500;
 }
@@ -1586,25 +1765,11 @@ const handleShowNormalLogin = () => {
   transition: color 0.2s ease;
 }
 
-.var-item:hover .copy-icon {
+.var-card:hover .copy-icon {
   color: #409eff;
 }
 
 .parse-tip {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 15px;
-  padding: 10px 15px;
-  background: #f0f9ff;
-  border: 1px solid #bae6fd;
-  border-radius: 6px;
-  color: #0369a1;
-  font-size: 13px;
-  flex-shrink: 0;
-}
-
-.parse-tip .el-icon {
-  font-size: 16px;
+  margin-top: 12px;
 }
 </style>

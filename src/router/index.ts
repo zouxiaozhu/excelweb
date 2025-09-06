@@ -27,6 +27,14 @@ const routes: RouteRecordRaw[] = [
     }
   },
   {
+    path: '/excel-to-word-history',
+    name: 'ExcelToWordHistory',
+    component: () => import('../pages/ExcelToWordHistory.vue'),
+    meta: {
+      title: '历史转换记录 - Excel Web'
+    }
+  },
+  {
     path: '/excel-search',
     name: 'ExcelSearch',
     component: () => import('../pages/ExcelSearch.vue'),
@@ -56,7 +64,7 @@ router.beforeEach((to, _from, next) => {
   }
 
   // 检查是否需要登录的页面
-  const requiresAuth = ['ExcelQuery', 'ExcelToWord', 'UserProfile']
+  const requiresAuth = ['ExcelQuery', 'ExcelToWord', 'ExcelToWordHistory', 'UserProfile']
 
   if (requiresAuth.includes(to.name as string)) {
     // 这里只是设置标题，实际的登录检查会在组件中进行

@@ -14,7 +14,9 @@ import type {
     PageResponse,
     UpdateTaskRequest,
     ApiResponse,
-    ExcelDataDetailResponse
+    ExcelDataDetailResponse,
+    ExcelToWordHistoryTask,
+    ExcelToWordHistoryDetail
 } from '@/typings/api'
 
 /**
@@ -218,6 +220,10 @@ export const excelToWordApi = {
             id: string
             taskId: string
             taskType: string
+            fromObject: string
+            toObject: string
+            fromOssType: string
+            toOssType: string
             status: string
             fileUrl: string
             remark: string
@@ -228,18 +234,56 @@ export const excelToWordApi = {
         commonTask: {
             id: number
             taskId: string
+            taskType: string
             status: string
             completeCount: number
             exceptCount: number
+            createdAt: string
+            updatedAt: string
+            payload: {
+                tableFileExtension: string
+                tableFileName: string
+                wordVars: string[]
+                ossType: string
+                wordPath: string
+                storagePath: string
+                wordFileName: string
+                tablePath: string
+            }
             result: {
-                zip_url: string
+                has_zip_count: number
+                zip_end: boolean
+                completedAt: string
                 zipFileName: string
-                totalFiles: number
+                zip_text: string
                 zip_success: boolean
+                zip_path: string
+                need_zip_count: number
+                totalFiles: number
+                zipFile: string
+                zip_url: string
             }
         }
     }>> {
         return http.get('/api/excel-to-word/task-process', { params })
+    },
+
+    /**
+     * 获取历史转换记录列表
+     * @param params 分页参数
+     * @returns 历史记录列表
+     */
+    getHistoryList(params: PageParams): Promise<PageResponse<ExcelToWordHistoryTask>> {
+        return http.get('/api/excel-to-word/history', { params })
+    },
+
+    /**
+     * 获取历史转换记录详情
+     * @param taskId 任务ID
+     * @returns 历史记录详情
+     */
+    getHistoryDetail(taskId: string): Promise<ApiResponse<ExcelToWordHistoryDetail>> {
+        return http.get(`/api/excel-to-word/history/${taskId}`)
     }
 }
 

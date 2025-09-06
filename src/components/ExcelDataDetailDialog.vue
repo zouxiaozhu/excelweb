@@ -10,17 +10,6 @@
     <!-- Excel数据详情 -->
     <div class="excel-info-section">
       <el-descriptions :column="3" border>
-        <el-descriptions-item label="任务ID">
-          {{ taskData?.taskId || '-' }}
-        </el-descriptions-item>
-        <el-descriptions-item label="Excel文件">
-          {{ taskData?.excelFile || '-' }}
-        </el-descriptions-item>
-        <el-descriptions-item label="状态">
-          <el-tag :type="getStatusType(taskData?.status)">
-            {{ getStatusText(taskData?.status) }}
-          </el-tag>
-        </el-descriptions-item>
         <el-descriptions-item label="总行数">
           {{ pagination.total }}
         </el-descriptions-item>
@@ -88,7 +77,7 @@
 import { ref, reactive, computed, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { excelApi } from '@/services/api'
-import type { ExcelParseTask, ExcelDataDetailResponse, ExcelDataRecord } from '@/typings/api'
+import type { ExcelParseTask } from '@/typings/api'
 
 // 定义组件属性
 interface Props {
@@ -242,34 +231,6 @@ const handleCurrentChange = (page: number) => {
   loadExcelData()
 }
 
-/**
- * 获取状态类型
- */
-const getStatusType = (status: string) => {
-  switch (status) {
-    case 'Enable': return 'success'
-    case 'Disable': return 'info'
-    case 'completed': return 'success'
-    case 'failed': return 'danger'
-    case 'processing': return 'warning'
-    default: return 'info'
-  }
-}
-
-/**
- * 获取状态文本
- */
-const getStatusText = (status: string) => {
-  switch (status) {
-    case 'Enable': return '启用'
-    case 'Disable': return '禁用'
-    case 'pending': return '待处理'
-    case 'processing': return '处理中'
-    case 'completed': return '已完成'
-    case 'failed': return '失败'
-    default: return status
-  }
-}
 
 /**
  * 格式化文件大小

@@ -15,10 +15,18 @@
       :disabled="disabled"
       :show-file-list="false"
       :auto-upload="false"
+      :limit="1"
+      :on-exceed="handleExceed"
+      @click="handleUploadClick"
     >
-      <el-icon class="el-icon--upload"><upload-filled /></el-icon>
+      <!-- <el-icon class="el-icon--upload"><upload-filled /></el-icon> -->
       <div class="el-upload__text">
-        将文件拖到此处，或<em>点击上传</em>
+        <template v-if="uploadedFiles.length > 0">
+          将文件拖到此处，或<em>点击重新上传文件</em>
+        </template>
+        <template v-else>
+          将文件拖到此处，或<em>点击上传</em>
+        </template>
       </div>
       <template #tip>
         <div class="el-upload__tip">
@@ -44,29 +52,9 @@
           <el-icon class="file-icon"><Document /></el-icon>
           <span class="file-name">{{ file.fileName }}</span>
         </div>
-        <div class="file-actions">
-          <el-button 
-            type="danger" 
-            size="small" 
-            @click="removeFile(file.fileId)"
-            class="remove-btn"
-          >
-            删除
-          </el-button>
-        </div>
       </div>
     </div>
     
-    <!-- 重新上传按钮 -->
-    <div v-if="showReupload" class="reupload-section">
-      <el-button 
-        type="primary" 
-        @click="handleReupload"
-        :icon="Refresh"
-      >
-        重新上传
-      </el-button>
-    </div>
   </div>
 </template>
 
@@ -89,7 +77,7 @@
  */
 
 import { ref, computed } from 'vue'
-import { UploadFilled, Refresh } from '@element-plus/icons-vue'
+import { UploadFilled } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import type { UploadProps, UploadRequestOptions } from 'element-plus'
 import { fileApi } from '@/services/api'
@@ -128,7 +116,6 @@ const uploadRef = ref()
 const uploading = ref(false)
 const uploadPercent = ref(0)
 const uploadStatus = ref<'success' | 'exception' | undefined>()
-const showReupload = ref(false)
 const uploadedFiles = ref<any[]>([])
 
 // 计算属性
@@ -151,6 +138,11 @@ const progressText = computed(() => {
  * 上传前验证
  */
 const beforeUpload: UploadProps['beforeUpload'] = (file) => {
+  // 如果已有文件，先清除
+  if (uploadedFiles.value.length > 0) {
+    uploadedFiles.value = []
+  }
+  
   // 检查文件类型
   if (props.accept) {
     const acceptTypes = props.accept.split(',').map(type => type.trim())
@@ -197,9 +189,6 @@ const handleSuccess = (response: any, file: File) => {
   ElMessage.success('文件上传成功！')
   emit('success', { response, file })
   
-  // 显示重新上传按钮
-  showReupload.value = true
-  
   // 2秒后隐藏进度条
   setTimeout(() => {
     uploadPercent.value = 0
@@ -238,16 +227,46 @@ const handleProgress = (event: any) => {
 }
 
 // 处理 Element Plus Upload 组件的文件变化
-const handleUploadChange = (uploadFile: any) => {
+const handleUploadChange = (uploadFile: any, uploadFiles: any[]) => {
   if (uploadFile.raw) {
     // 开始上传
     uploading.value = true
     uploadPercent.value = 0
     uploadStatus.value = undefined
-    showReupload.value = false // 隐藏重新上传按钮
     
     // 调用自定义上传，传递业务类型
     customUpload(uploadFile.raw, props.businessType)
+  }
+}
+
+/**
+ * 处理文件超出限制
+ */
+const handleExceed = (files: File[], uploadFiles: any[]) => {
+  // 清空现有文件
+  uploadRef.value?.clearFiles()
+  // 清空已上传文件列表
+  uploadedFiles.value = []
+  // 添加新文件
+  if (files.length > 0) {
+    const file = files[0]
+    if (beforeUpload(file)) {
+      customUpload(file, props.businessType)
+    }
+  }
+}
+
+/**
+ * 处理上传区域点击事件
+ */
+const handleUploadClick = () => {
+  console.log('Upload area clicked, has files:', uploadedFiles.value.length > 0)
+  if (uploadedFiles.value.length > 0) {
+    console.log('Clearing files for reupload')
+    // 清空已上传文件列表
+    uploadedFiles.value = []
+    // 清空上传组件的文件列表
+    uploadRef.value?.clearFiles()
   }
 }
 
@@ -259,8 +278,6 @@ const handleReupload = () => {
   uploadRef.value?.clearFiles()
   // 清空已上传文件列表
   uploadedFiles.value = []
-  // 隐藏重新上传按钮
-  showReupload.value = false
   // 重置上传状态
   uploading.value = false
   uploadPercent.value = 0
@@ -297,10 +314,6 @@ defineExpose({
   font-size: 14px;
 }
 
-.reupload-section {
-  margin-top: 20px;
-  text-align: center;
-}
 
 .uploaded-files {
   margin-top: 20px;
@@ -368,7 +381,7 @@ defineExpose({
 }
 
 :deep(.el-upload-dragger .el-upload__text) {
-  font-size: 14px;
+  font-size: 20px;
   line-height: 1.4;
 }
 </style>

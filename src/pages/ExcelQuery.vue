@@ -53,6 +53,7 @@
               </div>
             </template>
             <FileUpload 
+              ref="fileUploadRef"
               :accept="'.xlsx'"
               :max-size="10"
               business-type="USER_EXCEL_PARSE"
@@ -71,21 +72,33 @@
               </div>
             </template>
             <div class="parse-content">
-              <div class="file-info">
+              <div v-if="currentFileInfo" class="file-info">
                 <el-descriptions :column="2" border>
                   <el-descriptions-item label="文件名">
-                    {{ currentFileInfo?.fileName }}
+                    {{ currentFileInfo.fileName }}
                   </el-descriptions-item>
                   <el-descriptions-item label="文件大小">
-                    {{ (currentFileInfo?.sizeText || 0) }}
+                    {{ currentFileInfo.sizeText || 0 }}
                   </el-descriptions-item>
                   <el-descriptions-item label="上传时间">
-                    {{ currentFileInfo?.uploadTime }}
+                    {{ currentFileInfo.uploadTime }}
                   </el-descriptions-item>
                   <el-descriptions-item label="文件ID">
-                    {{ currentFileInfo?.fileId }}
+                    {{ currentFileInfo.fileId }}
                   </el-descriptions-item>
                 </el-descriptions>
+              </div>
+              <div v-else class="no-file-info">
+                <el-alert
+                  title="没有文件信息"
+                  type="warning"
+                  :closable="false"
+                  show-icon
+                >
+                  <template #default>
+                    <p>请先上传Excel文件</p>
+                  </template>
+                </el-alert>
               </div>
               
               <!-- 解析状态显示 -->
@@ -116,9 +129,9 @@
               </div>
               
               <div class="parse-actions">
-                <!-- 只有在未解析完成且当前文件未被解析过时才显示解析按钮 -->
+                <!-- 只有在有文件信息且未解析完成且当前文件未被解析过时才显示解析按钮 -->
                 <el-button 
-                  v-if="!parseResult && !hasParsedCurrentFile"
+                  v-if="currentFileInfo && !parseResult && !hasParsedCurrentFile"
                   type="primary" 
                   size="large"
                   :loading="parsing"
@@ -397,6 +410,7 @@ const hideExperienceWarning = ref(false)
 const showTaskSettingDialog = ref(false)
 const showExcelDetailDialog = ref(false)
 const currentTask = ref<ExcelParseTask | null>(null)
+const fileUploadRef = ref()
 
 // 计算属性 - 登录状态
 const isLoggedIn = computed(() => globalStore.isLoggedIn)
@@ -483,11 +497,14 @@ const handleReupload = () => {
   currentFileInfo.value = null
   parseResult.value = null
   hasParsedCurrentFile.value = false
+  parsing.value = false
   globalStore.clearCurrent()
+  
+  // 清空文件上传组件的文件列表
+  fileUploadRef.value?.reupload()
   
   // 回到第一步
   currentStep.value = 0
-  
   ElMessage.info('请重新选择文件上传')
 }
 
@@ -598,6 +615,9 @@ const createNewParse = () => {
   hasParsedCurrentFile.value = false
   parsing.value = false
   globalStore.clearCurrent()
+  
+  // 清空文件上传组件的文件列表
+  fileUploadRef.value?.reupload()
   
   // 回到第一步
   currentStep.value = 0
@@ -1028,6 +1048,10 @@ const handleTaskSettingSave = async (settingData: TaskSettingData) => {
 }
 
 .file-info {
+  margin-bottom: 30px;
+}
+
+.no-file-info {
   margin-bottom: 30px;
 }
 
